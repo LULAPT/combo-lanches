@@ -355,12 +355,7 @@ function Ladrilho({ id, nome, quantos, arte, sobe = false, className = '' }) {
         <span className="titulo-app block text-[clamp(15.5px,4.8vw,18px)] leading-[1.02] text-texto [font-stretch:76%]">
           {nome}
         </span>
-        {/* o ramo: sai do nome e aponta pro "5 opções" (cinza no claro,
-            branco no escuro — .ramo-opcoes no index.css) */}
-        <span className="mt-0.5 flex items-center gap-1 text-[12.5px] font-semibold text-texto/75">
-          <IconeRamo className="ramo-opcoes" />
-          {quantos} opções
-        </span>
+        <Opcoes quantos={quantos} />
       </span>
       <motion.span
         aria-hidden="true"
@@ -371,5 +366,72 @@ function Ladrilho({ id, nome, quantos, arte, sobe = false, className = '' }) {
         {arte}
       </motion.span>
     </motion.button>
+  )
+}
+
+/* ---- O "5 OPÇÕES" DO LADRILHO, COM O RAMO ----
+   O ramo sai do nome e aponta pro "5 opções" (cinza e mais fino no claro,
+   branco e grosso no escuro — .ramo-opcoes no index.css). Pedido do Marco:
+   a linha ENTRA em três tempos, na primeira vez que aparece na tela:
+     1. o texto está onde estaria SEM o ramo — colado na esquerda, alinhado
+        com o nome da categoria. Fica ali um instante (ESPERA);
+     2. anda pra direita, abrindo o vão do ramo (ANDA)...
+     3. ...e o ramo se DESENHA no vão: desce do nome e vira pro texto.
+   O ramo está no lugar dele desde o começo, só invisível; quem anda é o
+   texto, por transform (x) — animar a largura do ramo faria o navegador
+   recalcular o layout a cada quadro (a mesma regra do .ladrilho-texto).
+
+   `viewport.margin`: o gatilho só dispara quando o texto passa da barra de
+   abas (fixa em cima da parte de baixo da tela) — senão a animação rodaria
+   escondida atrás dela.
+
+   Menos movimento (sistema ou modo leve): as durações viram zero e tudo vai
+   direto pro fim. Não dá pra só tirar o whileInView: se o modo leve ligar
+   DEPOIS da montagem (a aba Início fica montada), o texto ficaria preso no
+   passo 1. */
+const RAMO = 16 // altura do ramo, em px
+const ABRE = RAMO * (14 / 18) + 4 // o texto anda a largura do ramo (proporção do IconeRamo) + o gap-1
+const ESPERA = 0.6
+const ANDA = 0.5
+const DESENHA = 0.45
+
+function Opcoes({ quantos }) {
+  const menos = useMenosMovimento()
+  const quando = (delay, duration, ease) => (menos ? { duration: 0 } : { delay, duration, ease })
+  // o ramo começa a se desenhar quando o texto já está quase parado: a curva
+  // (a mesma --ease-mordida do CSS) freia no fim, e com 60% do tempo ele já
+  // andou quase tudo
+  const desenhaEm = ESPERA + ANDA * 0.6
+
+  return (
+    <motion.span
+      initial={menos ? false : 'antes'}
+      whileInView="depois"
+      viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+      className="mt-0.5 flex items-center gap-1 text-[12.5px] font-semibold text-texto/75"
+    >
+      <IconeRamo
+        size={RAMO}
+        className="ramo-opcoes"
+        variantesTraco={{
+          // opacity junto: com pathLength 0, a ponta redonda ainda
+          // desenharia um pontinho no começo do traço
+          antes: { pathLength: 0, opacity: 0 },
+          depois: {
+            pathLength: 1,
+            opacity: 1,
+            transition: { pathLength: quando(desenhaEm, DESENHA, 'easeInOut'), opacity: quando(desenhaEm, 0.01) },
+          },
+        }}
+      />
+      <motion.span
+        variants={{
+          antes: { x: -ABRE },
+          depois: { x: 0, transition: quando(ESPERA, ANDA, [0.22, 1, 0.36, 1]) },
+        }}
+      >
+        {quantos} opções
+      </motion.span>
+    </motion.span>
   )
 }

@@ -1,3 +1,5 @@
+import { motion } from 'motion/react'
+
 /* ============================================================================
    ÍCONE DE RAMO — a setinha que desce e vira pra direita
    ----------------------------------------------------------------------------
@@ -13,8 +15,13 @@
 
    Mesma API dos ícones do lucide (size, strokeWidth, className) — ver
    também IconeInstagram.jsx e IconeFritas.jsx. A cor vem do currentColor.
+
+   Um extra: `variantesTraco` vai direto pro traço (um motion.path), pra
+   quem usa o ramo poder DESENHAR a linha com pathLength — é o que o "5
+   opções" dos ladrilhos do app faz (telas/Inicio.jsx). Sem ela, o traço é
+   um path comum, parado.
    ========================================================================== */
-export default function IconeRamo({ size = 16, strokeWidth = 2.6, className = '' }) {
+export default function IconeRamo({ size = 16, strokeWidth = 2.6, className = '', variantesTraco }) {
   return (
     <svg
       width={size * (14 / 18)}
@@ -30,7 +37,7 @@ export default function IconeRamo({ size = 16, strokeWidth = 2.6, className = ''
     >
       {/* desce da borda de cima até a curva e segue reto pra direita, na
           altura do meio da caixa (y = 9) */}
-      <path d="M2.5 1.5V4.5A4.5 4.5 0 0 0 7 9H13" />
+      <motion.path d="M2.5 1.5V4.5A4.5 4.5 0 0 0 7 9H13" variants={variantesTraco} />
     </svg>
   )
 }
