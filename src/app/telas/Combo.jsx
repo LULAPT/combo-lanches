@@ -12,7 +12,8 @@ import ArteProduto from '@/app/ArteProduto'
 import { useVoo } from '@/app/voo'
 import { TOM } from '@/app/abas'
 import { CabecalhoTela } from '@/app/pecas'
-import { cascata, subir } from '@/app/animacoes'
+import { COMBO_NA_BARRA, cascata, subir } from '@/app/animacoes'
+import { useMenosMovimento } from '@/hooks/useMenosMovimento'
 import Fileira from '@/app/Fileira'
 
 /* ============================================================================
@@ -31,6 +32,12 @@ import Fileira from '@/app/Fileira'
    bebida lá sem desmontar o combo) — e cada uma VOA da bandeja até a
    Sacola, uma logo depois da outra: lanche, batata, bebida.
 
+   O BOTÃO SÓ CHEGA DEPOIS DO DISCO: a cada entrada na aba, o disco da
+   logo desce pro meio da barra (NavInferior.jsx) e só então o "Adicionar
+   combo" sai de trás dela, subindo. Antes, o disco ficava metade pra fora
+   da barra e cobria um pedaço do botão. O ritmo é o COMBO_NA_BARRA
+   (animacoes.js), o mesmo da barra.
+
    As escolhas ficam guardadas quando você troca de aba (a aba continua
    montada, ver AppCelular.jsx).
    ========================================================================== */
@@ -47,7 +54,8 @@ const QUEDA = {
   transition: { type: 'spring', stiffness: 260, damping: 20 },
 }
 
-export default function Combo() {
+export default function Combo({ ativa }) {
+  const menos = useMenosMovimento()
   const { itens } = useCardapio()
   const { adicionar } = useCarrinho()
   const { voar } = useVoo()
@@ -157,33 +165,60 @@ export default function Combo() {
         <Etapa numero="3" titulo="Bebida" opcoes={bebidas} valor={bebidaId} onMudar={setBebidaId} nenhum="Sem bebida" />
       </motion.div>
 
-      {/* ---- O TOTAL, preso acima da barra de abas ---- */}
-      <div className="fixed inset-x-0 bottom-[calc(var(--altura-nav)+10px)] z-30 px-3">
-        <motion.button
-          type="button"
-          onClick={adicionarCombo}
-          whileTap={{ scale: 0.97 }}
-          disabled={!escolhidos.length}
-          className="mx-auto flex h-[58px] w-full max-w-[480px] items-center justify-between gap-3 rounded-[22px]
-                     bg-botao px-5 text-white shadow-(--sombra-botao) disabled:opacity-50"
+      {/* ---- O TOTAL, preso acima da barra de abas ----
+          A mesma caixa da barra (px-3, até 480px, e a mesma margem
+          negativa): o botão tem a largura da barra aberta.
+          Fora da aba, ele volta pro começo ('fora') sem animar — a aba está
+          escondida mesmo. Voltando pra ela, espera o disco e sobe de trás
+          da barra (z 30, ela é 40): parece sair de dentro dela. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--altura-nav)+12px)] z-30 px-3">
+        {/* a entrada anima a CAIXA, não o botão: a opacidade da Motion
+            passaria por cima do disabled:opacity-50 dele */}
+        <motion.div
+          initial="fora"
+          animate={ativa ? 'dentro' : 'fora'}
+          variants={{
+            fora: { y: 72, scale: 0.9, opacity: 0, transition: { duration: 0 } },
+            dentro: {
+              y: 0,
+              scale: 1,
+              opacity: 1,
+              transition: menos
+                ? { duration: 0 }
+                : { type: 'spring', visualDuration: 0.42, bounce: 0.34, delay: COMBO_NA_BARRA.botao },
+            },
+          }}
+          className="mx-auto max-w-[480px]"
         >
-          <span className="relative flex items-center overflow-hidden font-display text-[16px] font-bold">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span
-                key={feito ? 'feito' : 'normal'}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -20, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 34 }}
-                className="flex items-center gap-2"
-              >
-                {feito ? <Check size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}
-                {feito ? 'Combo na sacola' : 'Adicionar combo'}
-              </motion.span>
-            </AnimatePresence>
-          </span>
-          <Preco valor={total} className="font-display text-[18px] font-bold tabular-nums" />
-        </motion.button>
+          <motion.button
+            type="button"
+            onClick={adicionarCombo}
+            whileTap={{ scale: 0.97 }}
+            disabled={!escolhidos.length}
+            // botão não estica com margem negativa como uma div: a largura
+            // vai escrita (100% + o que a barra abre dos dois lados)
+            style={{ width: `calc(100% + ${COMBO_NA_BARRA.abre * 2}px)`, marginLeft: -COMBO_NA_BARRA.abre }}
+            className="pointer-events-auto flex h-[58px] items-center justify-between gap-3 rounded-[22px] bg-botao px-5
+                       text-white shadow-(--sombra-botao) disabled:opacity-50"
+          >
+            <span className="relative flex items-center overflow-hidden font-display text-[16px] font-bold">
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={feito ? 'feito' : 'normal'}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 34 }}
+                  className="flex items-center gap-2"
+                >
+                  {feito ? <Check size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}
+                  {feito ? 'Combo na sacola' : 'Adicionar combo'}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+            <Preco valor={total} className="font-display text-[18px] font-bold tabular-nums" />
+          </motion.button>
+        </motion.div>
       </div>
     </motion.div>
   )

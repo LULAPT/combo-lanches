@@ -367,14 +367,20 @@
    no claro, esbranquiçado: um degradê do branco pro gelo, contorno fino e
    sombra tingida do marrom da comida. A logo colorida fica bonita nos
    dois.
-   O primeiro box-shadow (5px da cor do fundo) é o aro que recorta o
+   O primeiro box-shadow (--aro, da cor do fundo) é o aro que recorta o
    "entalhe" na barra. Mora aqui, e não num ring-* do Tailwind: o ring
-   também é box-shadow, e esta regra (fora de camada) o apagaria. */
+   também é box-shadow, e esta regra (fora de camada) o apagaria.
+   Na aba Combo o disco pousa no MEIO da barra (data-no-meio) e o aro some
+   — sem borda pra cortar, ele viraria um anel de outra cor em cima dela.
+   O --aro muda e o box-shadow calculado muda junto, então a transição
+   anima o aro encolhendo. */
 .disco-marca {
+  --aro: 5px;
   border: 1px solid rgb(255 255 255 / 0.08);
   background: #1b1a19;
+  transition: box-shadow 0.3s var(--ease-mordida);
   box-shadow:
-    0 0 0 5px var(--color-fundo),
+    0 0 0 var(--aro) var(--color-fundo),
     inset 0 1px 0 rgb(255 255 255 / 0.14),
     0 12px 24px -8px rgb(0 0 0 / 0.55);
 }
@@ -383,10 +389,14 @@
   border-color: #e0ded8;
   background: linear-gradient(180deg, #ffffff, #efeeea);
   box-shadow:
-    0 0 0 5px var(--color-fundo),
+    0 0 0 var(--aro) var(--color-fundo),
     inset 0 1px 0 #ffffff,
     inset 0 -3px 6px -3px rgb(60 45 30 / 0.12),
     0 12px 24px -10px rgb(60 45 30 / 0.4);
+}
+
+.disco-marca[data-no-meio] {
+  --aro: 0px;
 }
 
 /* AS FILEIRAS QUE ROLAM DE LADO (app, Fileira.jsx — Monte seu combo e o
@@ -633,6 +643,19 @@ body {
   /* clip e não hidden: hidden quebra o position:sticky de TODOS os
      descendentes (vira o novo contêiner de rolagem), e a landing inteira
      depende de sticky. */
+  overflow-x: clip;
+}
+
+/* O APP: a troca de aba desliza a tela nova 28px de lado (AppCelular.jsx)
+   e, no meio do deslize, ela passa da borda direita. Sem corte, o celular
+   alargava a PÁGINA por um instante — e a barra de abas, fixa de ponta a
+   ponta, esticava e pulava pra direita junto. O clip do body acima não
+   segura isso (o navegador repassa o overflow do body pra janela, ver
+   .secao-empilhada): tem que cortar num elemento de verdade, a caixa que
+   segura as telas. clip e não hidden, pelo mesmo motivo do body. As peças
+   fixas (a barra, a folha do produto, o voo) não são cortadas: quem manda
+   nelas é a janela, não o #root. */
+:root[data-app] #root {
   overflow-x: clip;
 }
 
