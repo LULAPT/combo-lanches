@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover: no iPhone, deixa a página ir até as bordas
+         arredondadas e o env(safe-area-inset-*) passa a valer. É o que
+         deixa a barra de abas do app (src/app) sentar certinho acima da
+         barra de gestos, em vez de flutuar num buraco branco. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- cor da barra do navegador no celular: o script abaixo troca pela
+         do fundo do tema certo (e o TemaContext.jsx troca junto com o tema) -->
+    <meta name="theme-color" content="#0a0a0b" />
+
+    <!-- APARÊNCIA ANTES DE TUDO
+         Roda antes do CSS e antes do React. Decide duas coisas:
+
+         1. É celular? (a MESMA consulta do src/hooks/useCelular.js — mudou
+            lá, mude aqui). Celular ganha data-app no <html>: é o app, com
+            a paleta própria dele (index.css, bloco APP).
+         2. Qual tema. Cada experiência guarda o SEU:
+              site  combo-lanches:tema      padrão escuro
+              app   combo-lanches:tema-app  padrão claro
+            data-tema="claro" liga o claro; sem o atributo, é o escuro.
+
+         Sem isto, a página pintaria no tema errado, o React montaria e
+         trocaria: um flash a cada F5.
+
+         O try existe porque localStorage lança erro em aba anônima de
+         alguns navegadores; sem ele, este script derrubaria o resto. -->
+    <script>
+      try {
+        var html = document.documentElement
+        var celular = window.matchMedia(
+          '(max-width: 767px), (pointer: coarse) and (max-height: 500px)',
+        ).matches
+        var salvo = localStorage.getItem(celular ? 'combo-lanches:tema-app' : 'combo-lanches:tema')
+        var tema = salvo === 'claro' || salvo === 'escuro' ? salvo : celular ? 'claro' : 'escuro'
+
+        if (celular) html.dataset.app = ''
+        if (tema === 'claro') html.dataset.tema = 'claro'
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute(
+            'content',
+            celular ? (tema === 'claro' ? '#f4f4f1' : '#121211') : tema === 'claro' ? '#f6f6f7' : '#0a0a0b',
+          )
+
+        // modo leve (animações desligadas): mesmo motivo — sem isto, a
+        // página começaria animando e pararia de repente quando o React
+        // montasse. Ver ModoLeveContext.jsx.
+        if (localStorage.getItem('combo-lanches:leve') === '1') {
+          html.dataset.leve = ''
+        }
+      } catch (e) {}
+    </script>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>Combo Lanches · Caetés I, Abreu e Lima</title>
+    <meta
+      name="description"
+      content="Hambúrgueres clássicos e artesanais em Caetés I, Abreu e Lima. Veja o cardápio completo e monte seu combo."
+    />
+
+    <!-- Pré-conexão com o Google Fonts. As duas linhas existem porque o
+         arquivo .woff2 vem de fonts.gstatic.com, um host diferente do
+         fonts.googleapis.com — sem o preconnect no gstatic, o navegador só
+         abre a conexão depois de ler o CSS, e a fonte chega tarde.
+
+         Bricolage Grotesque é a letra de título do APP (celular). No
+         desktop ela não aparece em lugar nenhum — e o navegador só baixa o
+         arquivo de uma fonte quando alguma letra na tela usa ela, então
+         pro site isto custa só as linhas de CSS. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Caveat:wght@500..700&family=Oswald:wght@400..700&family=Plus+Jakarta+Sans:wght@400..800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

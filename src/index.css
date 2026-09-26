@@ -1,0 +1,1444 @@
+/* ============================================================================
+   COMBO LANCHES — tema e base
+   ----------------------------------------------------------------------------
+   Tailwind v4 não tem mais tailwind.config.js. Tudo que antes era
+   `theme.extend` agora é uma variável CSS dentro de @theme — na prática é o
+   mesmo :root que você já escreve, só que o Tailwind lê essas variáveis e gera
+   as classes utilitárias sozinho.
+
+   Regra do nome → classe:
+     --color-fundo      vira  bg-fundo / text-fundo / border-fundo
+     --font-display     vira  font-display
+     --radius-pill      vira  rounded-pill
+
+   NOMES SEMÂNTICOS, NÃO DE COR
+   Com dois temas, um token chamado "carvão" que fica creme no tema claro é
+   uma armadilha pra quem lê o código. Por isso os tokens dizem o PAPEL
+   (fundo, painel, texto, acento) e não a cor. As únicas exceções são as
+   duas cores da marca — `pao` e `ketchup` — que são iguais nos dois temas,
+   porque a logo não muda de cor quando o tema muda.
+   ========================================================================== */
+
+@import 'tailwindcss';
+
+/* `leve:` — o `motion-reduce:` do interruptor "Animações". Vale quando o
+   <html> tem data-leve (modo leve ligado). Ex.: `motion-reduce:hidden
+   leve:hidden` some nos dois casos. Ver o bloco MODO LEVE, mais abaixo. */
+@custom-variant leve (&:where([data-leve] *));
+
+/* `static`: emite TODAS as variáveis do tema, usadas ou não por alguma
+   classe. Sem isso o Tailwind poda as que ele não vê em className — e
+   algumas aqui só são lidas por JavaScript (a grade da hero lê
+   --color-linha no canvas) ou por atributo SVG (fill="var(--color-gergelim)").
+   Podadas, elas virariam vazio e a grade e o gergelim sumiriam. */
+@theme static {
+  /* ============================================================================
+     PALETA — "monocromático neutro + um único vermelho"
+     ----------------------------------------------------------------------------
+     Recalibrada seguindo as skills design-taste-frontend e redesign-skill
+     (modo "Redesign – Preserve": layout intacto, só a cor muda). O que a
+     auditoria achou na paleta anterior, e o que mudou por causa disso:
+
+     1. DOIS ACENTOS (amarelo + vermelho) → agora UM: o vermelho. As duas
+        skills: "max 1 accent color". O amarelo continua na logo e nos
+        desenhos dos produtos, que são ilustração — não é cor de interface.
+     2. TEMA CLARO CREME + TEXTO CAFÉ (#f4ede1 / #1d1611) → é literalmente a
+        paleta que a taste-skill proíbe como padrão ("warm paper + espresso",
+        o tom mais repetido de site gerado por IA). Agora branco-gelo neutro
+        — ainda não é branco puro, que as duas skills também proíbem.
+     3. NEUTROS AMARRONZADOS → uma família só de cinza neutro (base zinc).
+        Cinza neutro faz o vermelho ser o ÚNICO calor da tela.
+     4. VERMELHO COM ~89% DE SATURAÇÃO → abaixo de 80%. Continua sendo o
+        vermelho da logo pro olho, só não "grita".
+     5. BRILHO EXTERNO (neon) em botão, bolha e moldura → sombra tingida
+        discreta, ou nenhuma.
+     ========================================================================== */
+
+  /* ---------- LOGO (referência, não é cor de interface) ----------
+     Amostradas pixel a pixel da logo. Ficam registradas aqui pra quem for
+     desenhar peça nova de marca; a interface usa --color-acento. */
+  --color-pao: #fcf93a;
+  --color-ketchup: #f23522;
+
+  /* ---------- O ACENTO (o único) ----------
+     Vermelho da logo com a saturação puxada pra 78%. Texto pequeno nesta cor
+     em cima do fundo escuro dá 5,2:1 de contraste (passa AA). No tema claro
+     ele escurece (ver o bloco do tema claro). Uso contido: palavra de
+     destaque, ícone ativo, anotação manuscrita. PREÇO NÃO é acento — preço
+     é informação, fica na cor do texto. */
+  --color-acento: #e64f37;
+
+  /* BOTÃO PRINCIPAL: o mesmo vermelho, um degrau mais escuro, porque aqui
+     o texto é BRANCO: branco em cima dele dá 5:1 (no vermelho do acento
+     daria 3,9:1 e reprovaria pra letra de 14px). Igual nos dois temas. */
+  --color-botao: #ce3922;
+  --color-botao-hover: #db442c;
+
+  /* ---------- NEUTROS (tema escuro, o padrão) ----------
+     Uma família só: cinza neutro de base zinc, quase preto e branco-gelo.
+     Nenhum dos dois é puro (#000 / #fff) — as duas skills: "pure values
+     kill depth". */
+  --color-fundo: #0a0a0b;
+  --color-painel: #131315;
+  --color-painel-2: #1c1c1f;
+  --color-linha: #2b2b2f;
+  --color-texto: #f2f2f3;
+  --color-texto-suave: #a1a1a9;
+
+  /* texto escuro sobre superfície clara (badge da sacola) */
+  --color-sobre-marca: #111113;
+
+  /* gergelim da hero: claro no escuro, escuro no tema claro */
+  --color-gergelim: #e4e4e7;
+
+  /* ---------- TIPOGRAFIA ----------
+     Oswald: condensada, pesada, com o mesmo DNA das letras da logo.
+     Caveat: a letra de mão das anotações — é o "full menu" e o "it is
+     delicious" da referência que você mandou. */
+  --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-script: 'Caveat', 'Segoe Script', cursive;
+  /* a letra de título do APP (celular). No app ela também assume o lugar
+     da Oswald (--font-display, bloco APP): lá tudo é Bricolage. */
+  --font-app: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* ---------- APP (celular) ----------
+     Só o app (src/app) usa estes. Os valores de verdade moram no bloco APP,
+     mais abaixo (claro e escuro); os daqui só existem pro Tailwind gerar as
+     classes (bg-cartao, bg-tom-bebidas…).
+     `tom-*` é o fundo pastel de cada categoria: amarelo-pão pros lanches,
+     coral-ketchup pros acompanhamentos, menta pras bebidas geladas. É a
+     comida que colore o app — a interface continua com um acento só. */
+  --color-cartao: #fefefd;
+  --color-cartao-2: #efeeea;
+  --color-tom-hamburgueres: #ffe3a1;
+  --color-tom-acompanhamentos: #ffd5c8;
+  --color-tom-bebidas: #cfebdf;
+
+  --radius-mordida: 1.5rem;
+  --radius-pill: 999px;
+
+  --ease-mordida: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-flutua: flutua 6s ease-in-out infinite;
+  --animate-pulsa: pulsa 5s ease-in-out infinite;
+}
+
+/* ============================================================================
+   TOKENS QUE NÃO VIRAM CLASSE
+   Sombras, vidro e textura. Ficam fora do @theme porque não são cor nem
+   espaçamento — são usados dentro de utilitários e componentes.
+   ========================================================================== */
+:root {
+  color-scheme: dark;
+
+  --vidro-fundo: rgb(255 255 255 / 0.05);
+  --vidro-borda: rgb(255 255 255 / 0.1);
+  --vidro-brilho: inset 0 1px 0 rgb(255 255 255 / 0.1);
+
+  /* vidro FORTE (trilho de navegação do desktop): mais luz, mais blur,
+     borda mais viva. Ver o @utility vidro-forte lá embaixo. O reflexo de
+     baixo já foi âmbar; agora carrega o vermelho do acento, bem fraco —
+     um acento só, até no reflexo. */
+  --vf-luz: rgb(255 255 255 / 0.14);
+  --vf-fundo: rgb(255 255 255 / 0.03);
+  --vf-borda: rgb(255 255 255 / 0.14);
+  --vf-brilho: rgb(255 255 255 / 0.4);
+  --vf-reflexo: rgb(230 79 55 / 0.08);
+  --vf-hover: rgb(255 255 255 / 0.07);
+  /* item ativo do trilho: uma bolha de vidro um grau mais clara que o
+     próprio trilho, com a quina de cima pegando luz */
+  --vf-ativo: rgb(255 255 255 / 0.1);
+  --vf-ativo-brilho: rgb(255 255 255 / 0.2);
+  /* ícone do item ativo: branco puro (já foi o vermelho do acento — a
+     bolha de vidro já diz "é aqui", a cor não precisava repetir) */
+  --vf-ativo-icone: #fff;
+  /* separadores do trilho: TRANSLÚCIDOS de propósito. Com cor opaca, o de
+     cima (sobre a parte mais clara do vidro) virava um risco escuro e o de
+     baixo quase sumia — pareciam duas cores. Translúcido, os dois clareiam
+     o que está atrás na mesma medida e ficam iguais. */
+  --vf-divisor: rgb(255 255 255 / 0.12);
+  /* trilho ABERTO: o véu que cobre a página (desfoca e "abaixa a
+     opacidade" do resto, na direção do fundo) e as linhas da lista */
+  --veu: rgb(4 4 5 / 0.55);
+  --trilho-marca: rgb(255 255 255 / 0.2);
+  /* barra/tracinho ACESO: branco acinzentado, translúcido — um degrau acima
+     do apagado, quase imperceptível, mas está lá */
+  --trilho-lampada: rgb(232 232 236 / 0.5);
+  /* a logo cinza do trilho aberto (.logo-cinza): tira a cor e clareia */
+  --logo-cinza-filtro: grayscale(0.9) brightness(1.35);
+  /* a árvore dos burgers antes da tinta chegar: neutra, sem destaque */
+  --arvore-base: rgb(255 255 255 / 0.14);
+
+  /* marca-texto (o do Lidera360, no vermelho da casa). O traço da seleção
+     se MISTURA com a página: no escuro com screen (o fundo avermelha e o
+     texto claro continua claro), no claro com multiply (o fundo avermelha
+     e o texto escuro continua escuro). O grifo fixo fica atrás do texto,
+     então é só a cor translúcida. */
+  --marca-traco: rgb(230 79 55 / 0.6);
+  --marca-mistura: screen;
+  --grifo: rgb(230 79 55 / 0.3);
+
+  --sombra-pilha: 0 -34px 60px -24px rgb(0 0 0 / 0.85);
+  --sombra-flutuante: 0 18px 44px -14px rgb(0 0 0 / 0.75);
+  --sombra-burger: rgb(0 0 0 / 0.55);
+  /* sombra do botão principal: tingida com o próprio vermelho, curta e
+     embaixo — dá peso ao botão sem virar "neon" */
+  --sombra-botao: 0 10px 22px -12px rgb(206 57 34 / 0.55);
+
+  /* cor das linhas da grade da hero. rgba() com vírgula e não a sintaxe nova
+     "rgb(r g b / a)": quem lê isto é o canvas (strokeStyle), e canvas de
+     navegador mais velho não entende a sintaxe nova. */
+  --cor-grade: rgba(255, 255, 255, 0.075);
+
+  /* Grão de filme. É um SVG de ruído (feTurbulence) virado data URI: não
+     tem arquivo pra baixar, e 200×200 ladrilhado cobre a tela inteira.
+     No escuro o ruído é branco; no claro, preto. */
+  --grao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================================
+   TEMA CLARO
+   ----------------------------------------------------------------------------
+   Ligado por data-tema="claro" no <html> (BotaoTema.jsx). Só troca tokens —
+   nenhum componente sabe que existe tema.
+
+   Branco-gelo neutro, não creme. O creme (#f4ede1) com texto café saiu: é
+   a paleta "papel + espresso" que a taste-skill proíbe como padrão. Ainda
+   NÃO é branco puro — isso você já evitava nos seus projetos, e as skills
+   também proíbem. Sombras e vidro tingidos do mesmo cinza da página, nunca
+   marrom.
+
+   O `:root[data-tema]` tem especificidade maior que o `:root` que o
+   Tailwind gera pro @theme, então ganha sem precisar de !important.
+   ========================================================================== */
+:root[data-tema='claro'] {
+  color-scheme: light;
+
+  --color-fundo: #f6f6f7;
+  --color-painel: #ededef;
+  --color-painel-2: #e4e4e7;
+  --color-linha: #d4d4d8;
+  --color-texto: #151517;
+  --color-texto-suave: #5a5a63;
+  /* acento escurecido: 4,8:1 em cima do fundo claro (o do escuro daria 3,4) */
+  --color-acento: #c4351f;
+  --color-gergelim: #27272a;
+
+  --vidro-fundo: rgb(255 255 255 / 0.6);
+  --vidro-borda: rgb(20 20 28 / 0.1);
+  --vidro-brilho: inset 0 1px 0 rgb(255 255 255 / 0.8);
+
+  --vf-luz: rgb(255 255 255 / 0.8);
+  --vf-fundo: rgb(255 255 255 / 0.3);
+  --vf-borda: rgb(255 255 255 / 0.9);
+  --vf-brilho: rgb(255 255 255 / 1);
+  --vf-reflexo: rgb(196 53 31 / 0.06);
+  --vf-hover: rgb(20 20 28 / 0.06);
+  --vf-ativo: rgb(255 255 255 / 0.8);
+  --vf-ativo-brilho: rgb(255 255 255 / 1);
+  /* no claro a bolha é branca: ícone branco sumiria. O equivalente do
+     "branco puro" aqui é o tom mais forte do tema */
+  --vf-ativo-icone: var(--color-texto);
+  --vf-divisor: rgb(20 20 28 / 0.1);
+  --veu: rgb(222 222 226 / 0.55);
+  --trilho-marca: rgb(20 20 28 / 0.18);
+  /* no vidro branco, um branco acinzentado sumiria: aqui o "aceso" é o
+     mesmo degrau discreto, só que pro escuro */
+  --trilho-lampada: rgb(20 20 28 / 0.45);
+  --logo-cinza-filtro: grayscale(0.9) brightness(0.85);
+  --arvore-base: rgb(20 20 28 / 0.14);
+
+  --marca-traco: rgb(196 53 31 / 0.32);
+  --marca-mistura: multiply;
+  --grifo: rgb(196 53 31 / 0.24);
+
+  --sombra-pilha: 0 -28px 50px -26px rgb(20 20 28 / 0.28);
+  --sombra-flutuante: 0 14px 34px -12px rgb(20 20 28 / 0.22);
+  --sombra-burger: rgb(20 20 28 / 0.3);
+  --sombra-botao: 0 10px 22px -12px rgb(206 57 34 / 0.45);
+  --cor-grade: rgba(20, 20, 28, 0.09);
+
+  --grao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================================
+   APP (celular) — a paleta do app
+   ----------------------------------------------------------------------------
+   Ligado pelo data-app no <html> (index.html e TemaContext.jsx): só em
+   celular. O app tem tema PRÓPRIO, separado do site — e o padrão dele é o
+   CLARO, enquanto o do site é o escuro.
+
+   Os tokens de base (fundo, painel, texto, acento…) são REDEFINIDOS aqui,
+   não criados do zero: assim as peças que o app pega emprestadas do site
+   (bandeja, seletor de quantidade, pagamento) vestem a paleta do app sem
+   saber que ela existe.
+
+   Claro: fundo cinza-gelo neutro (não é creme) e cartões quase brancos —
+   quem colore é a comida (os tons pastel de cada categoria). O vermelho da
+   casa continua sendo o único acento de interface.
+
+   Contraste medido (WCAG):
+     claro   texto/fundo 15,3 · texto-suave/cartão 5,5 · acento/cartão 5,2
+             branco no botão 5,0
+     escuro  texto/fundo 16,6 · texto-suave/cartão 6,8 · acento/cartão 5,4
+   Em cima dos tons pastel, só a cor de texto principal (13:1). Cinza ou
+   vermelho pequeno ali cai pra ~4:1 — não use.
+   ========================================================================== */
+
+/* app ESCURO (sem data-tema) */
+:root[data-app] {
+  color-scheme: dark;
+
+  --color-fundo: #121211;
+  --color-painel: #1c1b1a;
+  --color-painel-2: #252422;
+  --color-linha: #2e2d2a;
+  --color-texto: #f3f1ee;
+  --color-texto-suave: #a6a29c;
+  --color-acento: #f0634a;
+  --font-display: var(--font-app);
+
+  --color-cartao: #1c1b1a;
+  --color-cartao-2: #262523;
+  --color-tom-hamburgueres: #33291b;
+  --color-tom-acompanhamentos: #3a2420;
+  --color-tom-bebidas: #172e29;
+
+  /* sem grão no app: em tela pequena e fundo liso ele só suja */
+  --grao: none;
+  --sombra-cartao: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 10px 24px -14px rgb(0 0 0 / 0.7);
+  --sombra-nav: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 40px -10px rgb(0 0 0 / 0.85);
+  --sombra-burger: rgb(0 0 0 / 0.5);
+  --veu: rgb(0 0 0 / 0.55);
+  /* a luz que bate de cima nas vitrines de produto */
+  --luz-vitrine: rgb(255 255 255 / 0.07);
+
+  /* a barra de abas: 68px + o respiro de baixo (no iPhone, a barra de
+     gestos). Tudo que é fixo embaixo (barra de total, avisos) e o fim de
+     cada tela contam com esta altura. */
+  --altura-nav: calc(68px + max(12px, env(safe-area-inset-bottom)));
+}
+
+/* app CLARO (o padrão do celular) */
+:root[data-app][data-tema='claro'] {
+  color-scheme: light;
+
+  --color-fundo: #f4f4f1;
+  --color-painel: #fefefd;
+  --color-painel-2: #efeeea;
+  --color-linha: #e6e4df;
+  --color-texto: #1e1d1c;
+  --color-texto-suave: #6b6863;
+  --color-acento: #c9361f;
+
+  --color-cartao: #fefefd;
+  --color-cartao-2: #efeeea;
+  --color-tom-hamburgueres: #ffe3a1;
+  --color-tom-acompanhamentos: #ffd5c8;
+  --color-tom-bebidas: #cfebdf;
+
+  /* sombras tingidas do marrom da comida, nunca preto puro no claro */
+  --sombra-cartao: 0 1px 2px rgb(60 45 30 / 0.06), 0 12px 28px -16px rgb(60 45 30 / 0.3);
+  --sombra-nav: 0 2px 6px rgb(60 45 30 / 0.06), 0 22px 44px -14px rgb(60 45 30 / 0.38);
+  --sombra-burger: rgb(70 45 20 / 0.28);
+  --sombra-flutuante: 0 14px 34px -12px rgb(60 45 30 / 0.22);
+  --sombra-botao: 0 12px 24px -12px rgb(206 57 34 / 0.6);
+  --veu: rgb(30 25 20 / 0.32);
+  --luz-vitrine: rgb(255 255 255 / 0.5);
+}
+
+/* Títulos no app obedecem às PRÓPRIAS classes.
+   O h1/h2/h3 do site (bloco BASE, mais abaixo) é CSS fora de camada — e
+   CSS fora de camada ganha de qualquer classe do Tailwind, que mora na
+   camada `utilities`. No site isso passa despercebido (tudo é Oswald 700
+   em caixa alta mesmo); no app, um `font-extrabold` num título seria
+   ignorado em silêncio.
+   `revert-layer` desfaz, só aqui, o que as regras fora de camada disseram
+   — e o título volta a seguir as classes dele. */
+:root[data-app] :is(h1, h2, h3) {
+  font-family: revert-layer;
+  font-weight: revert-layer;
+  letter-spacing: revert-layer;
+  text-transform: revert-layer;
+}
+
+/* O DISCO DA MARCA — o botão do meio da barra de abas do app
+   (NavInferior.jsx). No escuro, um disco escuro com a quina pegando luz;
+   no claro, esbranquiçado: um degradê do branco pro gelo, contorno fino e
+   sombra tingida do marrom da comida. A logo colorida fica bonita nos
+   dois.
+   O primeiro box-shadow (5px da cor do fundo) é o aro que recorta o
+   "entalhe" na barra. Mora aqui, e não num ring-* do Tailwind: o ring
+   também é box-shadow, e esta regra (fora de camada) o apagaria. */
+.disco-marca {
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: #1b1a19;
+  box-shadow:
+    0 0 0 5px var(--color-fundo),
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    0 12px 24px -8px rgb(0 0 0 / 0.55);
+}
+
+:root[data-tema='claro'] .disco-marca {
+  border-color: #e0ded8;
+  background: linear-gradient(180deg, #ffffff, #efeeea);
+  box-shadow:
+    0 0 0 5px var(--color-fundo),
+    inset 0 1px 0 #ffffff,
+    inset 0 -3px 6px -3px rgb(60 45 30 / 0.12),
+    0 12px 24px -10px rgb(60 45 30 / 0.4);
+}
+
+/* AS FILEIRAS QUE ROLAM DE LADO (app, Fileira.jsx — Monte seu combo e o
+   "Pra começar" do Início)
+   A bandeja de cada fileira usa o material do disco da barra (.disco-marca,
+   logo acima), mais discreto: no claro, o mesmo degradê branco → gelo com
+   contorno; no escuro, um tico MAIS ESCURA que o disco — no tom dele, os
+   cartões (bg-cartao) sumiriam em cima dela. A seta usa o disco inteiro. */
+.bandeja-fileira {
+  border: 1px solid rgb(255 255 255 / 0.06);
+  background: linear-gradient(180deg, #181817, #141413);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+
+:root[data-tema='claro'] .bandeja-fileira {
+  border-color: #e6e4df;
+  background: linear-gradient(180deg, #ffffff, #efeeea);
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    inset 0 -3px 6px -3px rgb(60 45 30 / 0.08);
+}
+
+.botao-seta {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: #1f1e1d;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    0 8px 18px -8px rgb(0 0 0 / 0.7);
+}
+
+:root[data-tema='claro'] .botao-seta {
+  border-color: #e0ded8;
+  background: linear-gradient(180deg, #ffffff, #efeeea);
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    0 8px 18px -8px rgb(60 45 30 / 0.4);
+}
+
+/* as cutucadas da seta: um empurrãozinho pro lado a cada 2,4s, 4 vezes,
+   e depois ela fica quieta (animação infinita pra sempre cansa) */
+@keyframes cutucar {
+  0%,
+  55%,
+  100% {
+    translate: 0 0;
+  }
+  70% {
+    translate: 5px 0;
+  }
+  85% {
+    translate: -1px 0;
+  }
+}
+
+.seta-cutucando {
+  animation: cutucar 2.4s ease-in-out 1.6s 4 both;
+}
+
+/* O FADE DAS BORDAS de uma rolagem de lado: --fade-esq e --fade-dir são o
+   tamanho do esmaecido em cada ponta. Registradas com @property pra que a
+   troca (0 → 28px quando a fileira sai do começo, 76px → 0 quando chega ao
+   fim) ANIME — variável comum pularia de um valor pro outro. */
+@property --fade-esq {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-dir {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+.rolagem-com-fade {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--fade-esq), #000 calc(100% - var(--fade-dir)), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 var(--fade-esq), #000 calc(100% - var(--fade-dir)), transparent);
+  transition:
+    --fade-esq 0.35s ease,
+    --fade-dir 0.35s ease;
+}
+
+/* o ramo antes do "5 opções" nos ladrilhos (IconeRamo): branco no escuro,
+   cinza no claro — pedido do Marco. O cinza é o texto-suave: em cima dos
+   tons pastel dos ladrilhos ele fica em ~4,4:1, bem visível em traço grosso. */
+.ramo-opcoes {
+  color: var(--color-texto);
+}
+
+:root[data-tema='claro'] .ramo-opcoes {
+  color: var(--color-texto-suave);
+}
+
+/* OS LADRILHOS DE CATEGORIA do Início do app (telas/Inicio.jsx)
+   O texto fica no MEIO do ladrilho. No tema escuro, nos ladrilhos com
+   data-sobe, ele desliza pro TOPO, saindo de cima do desenho.
+
+   Anima SÓ o translate (transform), nunca o top: top é propriedade de
+   layout — a cada quadro o navegador recalcularia a página, e isso no meio
+   da troca de tema (uma View Transition, já pesada) fazia a subida
+   engasgar. Transform roda na placa de vídeo, liso.
+   O texto mora sempre a 1rem do topo; no MEIO, ele é empurrado pra baixo
+   por translate: metade da altura do ladrilho (50cqh — o ladrilho é um
+   container, ver container-type) menos metade da altura do próprio texto
+   (50%) menos o 1rem.
+   A troca de tema revela o tema novo AO VIVO pelo círculo (TemaContext),
+   então a subida acontece enquanto o círculo passa. Curva de saída suave
+   (--ease-mordida), sem espera. Com menos movimento (sistema ou modo
+   leve), a regra global zera a duração: vai direto. */
+.ladrilho {
+  container-type: size;
+}
+
+.ladrilho-texto {
+  top: 1rem;
+  translate: 0 calc(50cqh - 50% - 1rem);
+  transition: translate 0.75s var(--ease-mordida);
+  will-change: translate;
+}
+
+:root[data-app]:not([data-tema='claro']) .ladrilho[data-sobe] .ladrilho-texto {
+  translate: 0 0;
+}
+
+/* o título do app: Bricolage pesada e um tico condensada, com as letras
+   bem juntas — é a "voz" das telas do celular */
+@utility titulo-app {
+  font-family: var(--font-app);
+  font-weight: 800;
+  font-stretch: 92%;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+/* toque no celular: sem o retângulo azul/cinza que o Android pinta por
+   cima de tudo que é tocável — cada botão do app tem a própria resposta */
+:root[data-app] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes flutua {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -10px;
+  }
+}
+
+@keyframes pulsa {
+  0%,
+  100% {
+    opacity: 0.75;
+    scale: 1;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.06;
+  }
+}
+
+/* O gergelim deriva em três keyframes diferentes. Cada semente sorteia um,
+   com duração e atraso próprios — três trajetórias que não fecham ciclo
+   juntas dão a impressão de movimento aleatório sem nenhum JS rodando. */
+@keyframes deriva-a {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(6px, -14px) rotate(24deg);
+  }
+}
+@keyframes deriva-b {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(-8px, -9px) rotate(-30deg);
+  }
+}
+@keyframes deriva-c {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(4px, -6px) rotate(12deg);
+  }
+  66% {
+    transform: translate(-5px, -12px) rotate(-10deg);
+  }
+}
+
+/* O BRILHO do COMBO da hero (o ShinyText do ReactBits em SVG — ver
+   PalavraCombo em pecasLogo.jsx). A faixa de luz atravessa a palavra em
+   ~2s e fica parada fora dela o resto do ciclo: um reflexo de vez em
+   quando, e não um pisca-pisca. Começa depois da intro do título.
+   --percurso é a distância da travessia, calculada no componente. */
+@keyframes brilho-combo {
+  0% {
+    translate: 0 0;
+  }
+  38% {
+    translate: var(--percurso) 0;
+  }
+  100% {
+    translate: var(--percurso) 0;
+  }
+}
+
+.brilho-combo {
+  animation: brilho-combo 5.5s cubic-bezier(0.45, 0, 0.25, 1) 2.6s infinite both;
+}
+
+/* hero coberta pela próxima seção: o brilho para (ninguém vê, e animação
+   rodando por baixo de tudo gasta bateria à toa) */
+[data-coberta='true'] .brilho-combo {
+  animation-play-state: paused;
+}
+
+/* ============================================================================
+   BASE
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth;
+  /* o cabeçalho é fixo; sem isso a âncora para embaixo dele */
+  scroll-padding-top: 5.5rem;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-fundo);
+  background-image: var(--grao);
+  color: var(--color-texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  /* clip e não hidden: hidden quebra o position:sticky de TODOS os
+     descendentes (vira o novo contêiner de rolagem), e a landing inteira
+     depende de sticky. */
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+/* Seleção nativa: vermelha com texto branco. Vale no celular, pra quem
+   pediu menos movimento e dentro de campos de texto — nos outros casos o
+   MarcaTexto.jsx liga o data-marca-texto e a seleção vira caneta (bloco
+   MARCA-TEXTO, mais abaixo). */
+:root:not([data-marca-texto]) ::selection,
+:root[data-marca-texto] :is(input, textarea)::selection {
+  background: var(--color-acento);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ============================================================================
+   TROCA DE TEMA — revelação circular
+   ----------------------------------------------------------------------------
+   O BotaoTema usa a View Transitions API: o navegador tira um "print" da
+   tela no tema velho, aplica o tema novo, e a gente anima um círculo
+   crescendo a partir do botão, revelando o tema novo por cima do print.
+
+   Estas duas linhas desligam o crossfade padrão do navegador — sem elas,
+   ele faz um fade por cima do nosso círculo e o efeito fica borrado.
+   ========================================================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* ============================================================================
+   TRILHO DO DESKTOP ABERTO (NavRail.jsx)
+   ----------------------------------------------------------------------------
+   --abertura (0 → 1) é escrita no <nav> a cada quadro, pela MESMA mola que
+   desenha a forma de vidro. Tudo que surge com a abertura lê essa variável:
+   véu, textos, linhas e divisores andam colados na forma, sem transição de
+   tempo chutado — e se o mouse sai no meio, voltam junto dela.
+
+   --i é a ordem do item na coluna (0 = marca): cada um entra um tico
+   depois do de cima.
+
+   --efeito (0 → 1, por item) é a proximidade do mouse, escrita pelo
+   useProximidade.js — a adaptação do LineSidebar do ReactBits.
+   ========================================================================== */
+.trilho-veu {
+  opacity: var(--abertura, 0);
+}
+
+/* a sombra da pílula fechada some logo que ela começa a esticar */
+.trilho-sombra {
+  opacity: clamp(0, 1 - var(--abertura, 0) * 6, 1);
+}
+
+/* --r: o item aparece (desliza 14px da direita + opacidade)
+   --m: a linha dele se desenha, um pouco depois */
+.trilho-revela {
+  --r: clamp(0, (var(--abertura, 0) - 0.5 - var(--i, 0) * 0.03) * 3.3, 1);
+  --m: clamp(0, (var(--abertura, 0) - 0.55 - var(--i, 0) * 0.025) * 3.5, 1);
+  opacity: var(--r);
+  translate: calc((1 - var(--r)) * 14px) 0;
+}
+
+/* fechado cabe na pílula (44px); aberto atravessa o painel */
+.trilho-divisor {
+  width: calc(2.75rem + (100% - 2.75rem) * var(--abertura, 0));
+}
+
+/* AS DUAS LOGOS DO TOPO. A colorida da pílula some logo que o trilho
+   começa a abrir; a cinza, grande, aparece quando a barriga já passou por
+   ela — e aí as peças dela se montam (LogoMontando, em Logo.jsx). */
+.trilho-logo-pilula {
+  opacity: clamp(0, 1 - var(--abertura, 0) * 3, 1);
+}
+
+.trilho-logo-grande {
+  opacity: clamp(0, (var(--abertura, 0) - 0.55) * 3, 1);
+}
+
+/* A LOGO "PROTÓTIPO": sem cor e semitransparente, como a logo da hero no
+   meio da entrada, quando as peças ainda estão aparecendo. No escuro o
+   filtro clareia (senão o COMBO some no vidro); no claro escurece. */
+.logo-cinza {
+  filter: var(--logo-cinza-filtro);
+  opacity: 0.6;
+}
+
+/* Os números do seu LineSidebar: barra (markerLength) de 60px, que vai de
+   70% a 120% do tamanho; tracinho de metade dela (tickScale 0.5), de 70% a
+   130%; texto deslizando até 30px (maxShift).
+
+   A COR: branco acinzentado translúcido (--trilho-lampada), sem halo
+   nenhum. "Aceso" aqui é só um degrau acima do apagado (--trilho-marca):
+   quase imperceptível, mas está lá. Nada de vermelho na lista. */
+
+/* A BARRA GRANDE: só acende e cresce com o mouse EM CIMA do item */
+.trilho-marca {
+  flex: none;
+  width: 3.75rem;
+  height: 1px;
+  background-color: color-mix(
+    in oklab,
+    var(--trilho-lampada) calc(var(--efeito, 0) * 100%),
+    var(--trilho-marca)
+  );
+  transform-origin: left center;
+  transform: scaleX(calc(var(--m) * (0.7 + var(--efeito, 0) * 0.5)));
+}
+
+/* O TRACINHO, no vão até o próximo item (o gap-1.5 tem 6px): é o único
+   que sente a PROXIMIDADE (--perto, escrita nele mesmo). Apagado, é ainda
+   mais fraco que a barra (opacidade 0.6); perto do mouse, acende no mesmo
+   branco acinzentado e cresce. */
+.trilho-tique {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  width: 1.875rem;
+  height: 1px;
+  background-color: color-mix(
+    in oklab,
+    var(--trilho-lampada) calc(var(--perto, 0) * 100%),
+    var(--trilho-marca)
+  );
+  opacity: calc(0.6 + var(--perto, 0) * 0.4);
+  transform-origin: left center;
+  transform: translateY(-50%) scaleX(calc(var(--m) * (0.7 + var(--perto, 0) * 0.6)));
+}
+
+/* o número: mono, como no original; clareia junto com a barra */
+.trilho-indice {
+  display: inline-block;
+  min-width: 2ch; /* ocupa o lugar mesmo vazio (Cardápio, Instagram) */
+  margin-right: 0.6rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  color: color-mix(
+    in oklab,
+    var(--color-texto) calc(var(--efeito, 0) * 100%),
+    var(--color-texto-suave)
+  );
+  opacity: calc(0.5 + var(--efeito, 0) * 0.3);
+}
+
+/* o texto clareia e desliza com o mouse em cima */
+.trilho-rotulo {
+  color: color-mix(
+    in oklab,
+    var(--color-texto) calc(var(--efeito, 0) * 100%),
+    var(--rotulo-repouso, var(--color-texto-suave))
+  );
+  translate: calc(var(--efeito, 0) * 30px) 0;
+}
+
+/* a seção atual: o texto já vem claro, parado — a bolha no ícone faz o
+   resto. Nenhuma barra acende sozinha. */
+[aria-current='page'] .trilho-rotulo {
+  --rotulo-repouso: var(--color-texto);
+}
+
+/* ============================================================================
+   MARCA-TEXTO — o do Lidera360
+   ----------------------------------------------------------------------------
+   Duas peças, a mesma caneta:
+
+   SELEÇÃO  (MarcaTexto.jsx) você seleciona um texto e, um instante depois
+            de soltar o mouse, um traço vermelho passa por cima dele, da
+            esquerda pra direita, uma linha depois da outra. A seleção
+            nativa fica transparente; o Ctrl+C continua normal.
+
+   GRIFO    (Grifo.jsx) trechos que valem a leitura já vêm grifados: a
+            caneta passa sozinha depois que o bloco terminou de surgir.
+            É um background-image que cresce de 0 a 100% da largura — e não
+            um ::before — então o texto fica naturalmente por cima, e o
+            box-decoration-break faz o traço quebrar junto com a linha.
+   ========================================================================== */
+:root[data-marca-texto] ::selection {
+  background: transparent;
+}
+
+.marca-texto-camada {
+  position: fixed;
+  inset: 0;
+  /* acima de tudo (o carrinho é 70): seleção dentro do modal também pinta */
+  z-index: 80;
+  pointer-events: none;
+}
+
+/* a mistura fica na CAMADA, não em cada traço: a camada é um contexto de
+   empilhamento próprio, e um traço misturado lá dentro só se misturaria
+   com a camada vazia. Só liga com traço na tela — mistura de tela cheia
+   à toa custa. */
+.marca-texto-camada:not(:empty) {
+  mix-blend-mode: var(--marca-mistura);
+}
+
+.marca-texto-traco {
+  position: absolute;
+  border-radius: 2px;
+  background: var(--marca-traco);
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.marca-texto-traco.pintado {
+  transform: scaleX(1);
+}
+
+.grifo {
+  background-color: transparent; /* mata o amarelo padrão do <mark> */
+  color: inherit;
+  background-image: linear-gradient(var(--grifo), var(--grifo));
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 0% 100%;
+  border-radius: 3px;
+  padding: 0.06em 0.16em;
+  margin: 0 -0.16em; /* devolve o padding, pro texto não "abrir" */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  /* a cor entra junto com o traço: o trecho clareia (no escuro) ou
+     escurece (no claro) no mesmo ritmo em que a caneta passa */
+  transition:
+    background-size 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.55s ease;
+}
+
+.grifo[data-grifado='true'] {
+  background-size: 100% 100%;
+  color: var(--color-texto);
+}
+
+/* ============================================================================
+   BARRA DE LEITURA (BarraLeitura.jsx) — o fio verde do Lidera360, em vermelho
+   ----------------------------------------------------------------------------
+   Acima do cabeçalho do celular e do trilho (55), abaixo do modal (60).
+   ========================================================================== */
+.barra-leitura {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 58;
+  height: 2px;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    var(--color-acento),
+    color-mix(in oklab, var(--color-acento) 60%, white)
+  );
+  box-shadow: 0 0 12px color-mix(in oklab, var(--color-acento) 55%, transparent);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* ============================================================================
+   ÁRVORE DOS BURGERS (ArvoreBurgers.jsx)
+   ----------------------------------------------------------------------------
+   Duas camadas do mesmo desenho: a de baixo, cinza, sempre inteira; a de
+   cima, vermelha, descoberta pela rolagem. pathLength="1" no SVG faz o
+   comprimento de qualquer caminho valer 1, então o tracejado de tamanho 1
+   com dashoffset de 1 a 0 esconde/mostra o traço inteiro — o JS só escreve
+   o dashoffset.
+   ========================================================================== */
+.arvore-base {
+  fill: none;
+  stroke: var(--arvore-base);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.arvore-tinta path {
+  fill: none;
+  stroke: var(--color-acento);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+}
+
+/* o nó: um anel da cor do fundo com borda cinza (o tronco "passa por
+   trás"), e um miolo vermelho que acende com um pulinho quando a tinta
+   chega */
+.arvore-no circle:first-child {
+  fill: var(--color-fundo);
+  stroke: var(--arvore-base);
+  stroke-width: 1.5;
+  transition: stroke 0.3s;
+}
+
+.arvore-no-luz {
+  fill: var(--color-acento);
+  opacity: 0;
+  scale: 0.3;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 0.3s,
+    scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.arvore-no.aceso circle:first-child {
+  stroke: var(--color-acento);
+}
+
+.arvore-no.aceso .arvore-no-luz {
+  opacity: 1;
+  scale: 1;
+}
+
+/* OS NÚMEROS DOS BURGERS (Burgers.jsx) — acendem quando a seta chega.
+   A cópia de trás (cinza, atrás do burger) some; a da frente (contorno
+   vermelho com um fundo quase transparente, por cima do burger) aparece
+   subindo 10px e crescendo de 94% pra 100%. As duas no mesmo lugar e ao
+   mesmo tempo: o olho lê um número só, que acendeu e passou pra frente. */
+.numero-atras {
+  transition: opacity 0.5s ease;
+}
+
+[data-chegou] .numero-atras {
+  opacity: 0;
+}
+
+.numero-frente {
+  color: color-mix(in oklab, var(--color-acento) 8%, transparent);
+  -webkit-text-stroke: 1.5px var(--color-acento);
+  opacity: 0;
+  translate: 0 10px;
+  scale: 0.94;
+  transition:
+    opacity 0.6s ease,
+    translate 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    scale 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-chegou] .numero-frente {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+/* OS NÚMEROS DO PEDIDO (CarrinhoDrawer.jsx) — os mesmos algarismos vazados
+   dos Burgers, em miniatura e sem acender: só o contorno, cinza. É o índice
+   da linha, não informação — fica apagado, e o vermelho da linha fica pra
+   anotação manuscrita dos extras. */
+.numero-pedido {
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in oklab, var(--color-texto-suave) 65%, transparent);
+}
+
+/* ============================================================================
+   PAGAMENTO SIMULADO (Pagamento.jsx)
+   ----------------------------------------------------------------------------
+   As três primeiras transições são do Transitions.dev, como você mandou:
+   text swap (o texto de status troca subindo e desfocando), card resize (a
+   janela muda de tamanho entre as etapas) e menu dropdown (a janela entra
+   crescendo de 97% a partir do topo-centro). Os nomes (t-text-swap etc.)
+   ficam os originais — é código de terceiros, igual os do ReactBits.
+   ========================================================================== */
+:root {
+  --text-swap-dur: 150ms;
+  --text-swap-translate-y: 4px;
+  --text-swap-blur: 2px;
+  --text-swap-ease: ease-in-out;
+
+  --resize-dur: 300ms;
+  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --dropdown-open-dur: 250ms;
+  --dropdown-close-dur: 150ms;
+  --dropdown-pre-scale: 0.97;
+  --dropdown-closing-scale: 0.99;
+  --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---- Transitions.dev: text states swap ---- */
+.t-text-swap {
+  display: inline-block;
+  transform: translateY(0);
+  filter: blur(0);
+  opacity: 1;
+  transition:
+    transform var(--text-swap-dur) var(--text-swap-ease),
+    filter var(--text-swap-dur) var(--text-swap-ease),
+    opacity var(--text-swap-dur) var(--text-swap-ease);
+  will-change: transform, filter, opacity;
+}
+.t-text-swap.is-exit {
+  transform: translateY(calc(var(--text-swap-translate-y) * -1));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+}
+.t-text-swap.is-enter-start {
+  transform: translateY(var(--text-swap-translate-y));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+  transition: none;
+}
+
+/* ---- Transitions.dev: card resize ---- */
+.t-resize {
+  transition:
+    width var(--resize-dur) var(--resize-ease),
+    height var(--resize-dur) var(--resize-ease);
+  will-change: width, height;
+}
+
+/* ---- Transitions.dev: menu dropdown ---- */
+.t-dropdown {
+  transform-origin: top left;
+  transform: scale(var(--dropdown-pre-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-open-dur) var(--dropdown-ease),
+    opacity var(--dropdown-open-dur) var(--dropdown-ease);
+  will-change: transform, opacity;
+}
+.t-dropdown[data-origin='top-center'] {
+  transform-origin: top center;
+}
+.t-dropdown.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-dropdown.is-closing {
+  transform: scale(var(--dropdown-closing-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-close-dur) var(--dropdown-ease),
+    opacity var(--dropdown-close-dur) var(--dropdown-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-text-swap,
+  .t-resize,
+  .t-dropdown {
+    transition: none !important;
+  }
+}
+
+/* ---- nossas: o véu, a troca de etapa, a espera do Pix, o "confirmado" ---- */
+
+/* o véu atrás da janela segue o mesmo estado dela */
+.pagamento-veu {
+  opacity: 0;
+  transition: opacity var(--dropdown-open-dur) var(--dropdown-ease);
+}
+.pagamento-veu.is-open {
+  opacity: 1;
+}
+.pagamento-veu.is-closing {
+  opacity: 0;
+  transition-duration: var(--dropdown-close-dur);
+}
+
+/* o conteúdo de cada etapa entra com o mesmo gesto do text swap (sobe,
+   desembaça, aparece) — a janela muda de tamanho e o miolo acompanha */
+@keyframes etapa-entra {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+    filter: blur(2px);
+  }
+}
+.pagamento-etapa {
+  animation: etapa-entra 280ms var(--resize-ease) 60ms both;
+}
+
+/* a barrinha "aguardando pagamento": enche nos 4s até a confirmação */
+@keyframes aguardando {
+  from {
+    scale: 0 1;
+  }
+}
+.pagamento-espera {
+  transform-origin: left center;
+  animation: aguardando var(--espera, 4000ms) linear both;
+}
+
+/* o QR code "sendo gerado": um brilho passando no esqueleto */
+@keyframes gerando {
+  to {
+    translate: 100% 0;
+  }
+}
+.pagamento-gerando::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  translate: -100% 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.5), transparent);
+  animation: gerando 0.9s ease-in-out infinite;
+}
+
+/* o "confirmado": o círculo vermelho estoura, e o ✓ se desenha por cima
+   (o mesmo truque de pathLength da árvore dos burgers) */
+@keyframes confirmado-circulo {
+  from {
+    scale: 0.4;
+    opacity: 0;
+  }
+  60% {
+    scale: 1.08;
+    opacity: 1;
+  }
+}
+@keyframes confirmado-marca {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.confirmado-circulo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: confirmado-circulo 480ms cubic-bezier(0.34, 1.56, 0.64, 1) 120ms both;
+}
+.confirmado-marca {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: confirmado-marca 360ms cubic-bezier(0.65, 0, 0.35, 1) 460ms forwards;
+}
+
+/* acompanhar pedido: o passo atual tem um anel vermelho que se abre e
+   some, sem parar — "está acontecendo agora" */
+@keyframes rastreio-pulso {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-acento) 45%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 9px transparent;
+  }
+}
+.rastreio-atual {
+  animation: rastreio-pulso 1.6s ease-out infinite;
+}
+
+/* ============================================================================
+   ACESSIBILIDADE DE MOVIMENTO
+   ----------------------------------------------------------------------------
+   Quem pediu menos movimento no sistema recebe a interface inteira estática.
+   O `!important` é necessário porque a Motion escreve transform inline.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* o empilhamento de seções vira rolagem normal */
+  .secao-empilhada {
+    position: relative !important;
+    top: auto !important;
+  }
+
+  /* o brilho do COMBO some (a regra de cima só encurtaria a animação —
+     a faixa de luz ficaria parada no meio da palavra) */
+  .brilho-combo {
+    display: none;
+  }
+
+  /* trilho: o texto acende com o mouse, mas não escorrega */
+  .trilho-rotulo {
+    translate: none;
+  }
+}
+
+/* MODO LEVE — as MESMAS regras de cima, ligadas pelo interruptor
+   "Animações" (data-leve no <html>, ver ModoLeveContext.jsx) em vez de
+   pelo sistema. CSS não junta "media query OU atributo" num seletor só,
+   por isso o bloco se repete: mexeu num, mexa no outro.
+
+   Nas classes do JSX, o equivalente do `motion-reduce:` é o `leve:`
+   (a variante declarada no topo deste arquivo). */
+:root[data-leve] *,
+:root[data-leve] *::before,
+:root[data-leve] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+:root[data-leve] .secao-empilhada {
+  position: relative !important;
+  top: auto !important;
+}
+
+:root[data-leve] .brilho-combo {
+  display: none;
+}
+
+:root[data-leve] .trilho-rotulo {
+  translate: none;
+}
+
+/* ============================================================================
+   SCROLL EMPILHADO — a seção de baixo "come" a de cima
+   ----------------------------------------------------------------------------
+   Cada seção é `position: sticky` e a seguinte sobe por cima dela porque tem
+   z-index maior (o SecaoEmpilhada.jsx põe o z-index inline).
+
+   O `top` NÃO é 0. Era, na primeira versão, e isso escondia um bug feio no
+   celular: uma seção mais alta que a tela grudava pelo topo e a parte de
+   baixo dela NUNCA aparecia — a próxima seção cobria antes. Agora o
+   SecaoEmpilhada mede a própria altura e escreve em --altura, e a seção
+   gruda quando o RODAPÉ dela encosta no fim da tela:
+
+     seção menor que a tela  →  top = 0              (gruda pelo topo)
+     seção maior que a tela  →  top = tela − altura  (negativo: rola tudo,
+                                                      depois gruda pela base)
+
+   O min() escolhe sozinho entre os dois casos.
+   ========================================================================== */
+.pilha {
+  position: relative;
+}
+
+.secao-empilhada {
+  position: sticky;
+  top: min(0px, calc(100svh - var(--altura, 100svh)));
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: var(--color-fundo);
+  background-image: var(--grao);
+  box-shadow: var(--sombra-pilha);
+  /* Corta o que vaza pro lado. As animações de surgimento "left"/"right"
+     (Revelar.jsx) começam com o elemento 48px fora do lugar — e no celular
+     esses 48px alargavam a PÁGINA inteira (390px de tela virava 418px de
+     página, e o botão Pedir do cabeçalho saía cortado).
+
+     O overflow-x: clip do body não resolvia: o navegador repassa o overflow
+     do body pra janela, e no celular a janela se alarga mesmo assim. Tem
+     que cortar aqui, na seção.
+
+     clip e não hidden: hidden transformaria a seção num contêiner de
+     rolagem, e aí o sticky de dentro dela (a bandeja do Monte seu Combo)
+     passaria a grudar na seção em vez de na tela. */
+  overflow-x: clip;
+}
+
+/* A última seção não gruda: ela precisa rolar embora pro rodapé aparecer. */
+.secao-empilhada:last-child {
+  position: relative;
+  top: auto;
+}
+
+/* ============================================================================
+   HERO — a logo que desmonta
+   ----------------------------------------------------------------------------
+   UMA variável, --p (0 a 1), controla a coreografia inteira. O Hero.jsx
+   escreve ela direto no DOM a cada frame da rolagem (sem passar pelo React),
+   e cada peça calcula a própria posição a partir dela, aqui no CSS.
+
+   Cada peça declara quando começa (--ini) e quanto dura (--dur) dentro dos
+   0–1 da rolagem. A conta abaixo transforma isso num progresso local 0–1
+   (--t) e aplica uma curva de desaceleração (--e, "ease-out cúbico"):
+
+     --t = clamp(0, (p − ini) / dur, 1)      progresso da peça
+     --e = 1 − (1 − t)³                      chega rápido, pousa devagar
+
+   Posição: vai de --y0 (logo montada) até --y1 (burger aberto). As
+   camadas de recheio também deslizam de lado (--x0) e aparecem (--o0).
+   Tudo em cqw — 1% da largura do "palco" — então a coreografia inteira
+   escala junto com o tamanho do burger, do celular ao monitor grande.
+   ========================================================================== */
+.palco-burger {
+  container-type: inline-size;
+}
+
+.peca-burger {
+  --t: clamp(0, (var(--p, 0) - var(--ini, 0)) / var(--dur, 1), 1);
+  --e: calc(1 - (1 - var(--t)) * (1 - var(--t)) * (1 - var(--t)));
+  transform: translate3d(
+    calc(var(--x0, 0) * (1 - var(--e)) * 1cqw),
+    calc((var(--y0, 0) + (var(--y1, 0) - var(--y0, 0)) * var(--e)) * 1cqw),
+    0
+  );
+  opacity: calc(var(--o0, 1) + (1 - var(--o0, 1)) * var(--e));
+  will-change: transform, opacity;
+}
+
+/* anotação ("cheddar — fatiado e em creme"): mesma conta, mas o que anima é
+   a linha se DESENHANDO e o texto aparecendo. O path tem pathLength="1", então
+   dasharray 1 = um traço do tamanho da linha inteira, e o dashoffset vai de 1
+   (traço escondido) a 0 (traço inteiro) — funciona com o cotovelo da linha,
+   coisa que um scaleX não faria. */
+.anotacao-burger {
+  --t: clamp(0, (var(--p, 0) - var(--ini, 0)) / var(--dur, 1), 1);
+  opacity: var(--t);
+}
+.anotacao-burger .traco {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--t));
+}
+
+/* ============================================================================
+   MINI BURGER — o burger do cardápio que abre no hover
+   ----------------------------------------------------------------------------
+   Mesmo princípio da hero, mais simples: uma variável --abrir (0 ou 1) e
+   cada camada se afasta proporcionalmente. A transição é do CSS, e só
+   funciona porque a variável está REGISTRADA com @property — variável CSS
+   comum não interpola (pula de 0 pra 1 sem meio-termo), porque o navegador
+   não sabe que ela é um número.
+   ========================================================================== */
+@property --abrir {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+.mini-burger {
+  container-type: inline-size;
+  --abrir: 0;
+  transition: --abrir 0.7s var(--ease-mordida);
+}
+.mini-burger[data-aberto='true'] {
+  --abrir: 1;
+}
+.mini-burger .camada-mini {
+  translate: 0 calc(var(--dy, 0) * var(--abrir) * 1cqw);
+}
+
+/* ============================================================================
+   UTILITÁRIOS
+   ----------------------------------------------------------------------------
+   @utility é a forma do Tailwind v4 de criar uma classe própria que funciona
+   com variantes (hover:, md:, etc). Use só pra combinação que se repete em
+   3+ lugares e ficaria ilegível como 12 classes soltas.
+   ========================================================================== */
+
+@utility vidro {
+  background: var(--vidro-fundo);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid var(--vidro-borda);
+  box-shadow: var(--vidro-brilho), var(--sombra-flutuante);
+}
+
+/* GLASSMORPHISM "de verdade" — cinco camadas somadas:
+   1. degradê de luz: mais claro em cima, quase transparente embaixo, como
+      luz batendo num vidro inclinado
+   2. blur + saturação no que está ATRÁS (backdrop-filter): o blur dá o
+      fosco, a saturação faz as cores de trás "acenderem" através do vidro
+   3. borda clara de 1px — a espessura do vidro
+   4. filete de brilho no topo (sombra interna de 1px) — a quina pegando luz
+   5. reflexo quente embaixo — a luz da hero rebatendo no vidro
+   O -webkit- é pro Safari, que ainda exige o prefixo no backdrop-filter. */
+@utility vidro-forte {
+  background: linear-gradient(160deg, var(--vf-luz), var(--vf-fundo) 60%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid var(--vf-borda);
+  box-shadow:
+    inset 0 1px 0 var(--vf-brilho),
+    inset 0 -22px 34px -22px var(--vf-reflexo),
+    var(--sombra-flutuante);
+}
+
+/* Botão principal: fundo chapado + texto branco. Uma cor só em qualquer
+   tela — o degradê de duas cores que existia aqui foi removido do site. */
+@utility botao-primario {
+  background-color: var(--color-botao);
+  color: #fff;
+  transition-property: background-color, transform, box-shadow;
+  transition-duration: 200ms;
+  &:hover {
+    background-color: var(--color-botao-hover);
+  }
+}
+
+@utility textura {
+  background-image: var(--grao);
+}
+
+/* Texto vazado (só o contorno). Usado no letreiro gigante atrás do burger. */
+@utility texto-vazado {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--color-linha);
+}
+
+/* Esconde a barra de rolagem mas mantém a rolagem funcionando — faixa
+   horizontal de categorias, onde uma barra visível suja o layout. */
+@utility sem-barra {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
