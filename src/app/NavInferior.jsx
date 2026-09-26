@@ -27,7 +27,7 @@ const LinkMovel = motion.create(Link)
    monta grande no meio da tela e VOA até este disco (AppCelular.jsx); e
    ela se monta de novo (pão de cima cai, o de baixo sobe, o COMBO estoura
    no meio — a entrada da hero do site) toda vez que o Combo vira a aba
-   ativa.
+   ativa, assim que o disco termina de descer.
 
    NA ABA COMBO o disco desce, cresce e pousa no MEIO da barra, engolindo
    o rótulo "Combo", e a barra abre pros lados (COMBO_NA_BARRA, em
@@ -217,14 +217,27 @@ const CRESCE = 1.16
 function BotaoCentro({ aba, ativo, para, logoPousada, houveAbertura }) {
   const menos = useMenosMovimento()
   /* Cada vez que o Combo vira a aba ativa, a logo remonta (key nova) e se
-     monta de novo. O "ajuste durante o render" (anterior/vezes) é o jeito
-     do React de reagir a uma prop que mudou sem um efeito a mais. */
+     monta de novo — mas só QUANDO O DISCO CHEGA no meio da barra: ele desce
+     com a logo parada, já montada, e ela se desmonta e remonta lá embaixo.
+     Pedido do Marco. "Chegar" é o visualDuration da mola (o quique que vem
+     depois não conta).
+     Duas etapas: o "ajuste durante o render" (anterior/entradas) percebe
+     que o Combo virou a aba ativa — é o jeito do React de reagir a uma prop
+     que mudou sem um efeito a mais; o efeito espera o disco e só então
+     troca a key (vezes). Saindo antes de ele chegar, o efeito cancela. */
   const [anterior, setAnterior] = useState(ativo)
+  const [entradas, setEntradas] = useState(0)
   const [vezes, setVezes] = useState(0)
   if (ativo !== anterior) {
     setAnterior(ativo)
-    if (ativo) setVezes(vezes + 1)
+    if (ativo) setEntradas(entradas + 1)
   }
+
+  useEffect(() => {
+    if (!ativo || entradas === vezes) return
+    const id = setTimeout(() => setVezes(entradas), menos ? 0 : COMBO_NA_BARRA.mola.visualDuration * 1000)
+    return () => clearTimeout(id)
+  }, [ativo, entradas, vezes, menos])
 
   return (
     <div className="relative flex flex-col items-center justify-end pb-[10px]">
@@ -250,7 +263,7 @@ function BotaoCentro({ aba, ativo, para, logoPousada, houveAbertura }) {
             as duas têm o mesmo layoutId ("logo-app"), e a Motion anima de
             uma posição (e tamanho) pra outra. Chegando voando, ela já vem
             montada (desdeFora false); das próximas vezes que o Combo vira a
-            aba ativa, ela se monta de novo. */}
+            aba ativa, ela se monta de novo quando o disco chega. */}
         {logoPousada && (
           <motion.span
             layoutId="logo-app"
