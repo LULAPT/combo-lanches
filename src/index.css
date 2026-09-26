@@ -469,15 +469,18 @@
     --fade-dir 0.35s ease;
 }
 
-/* o ramo antes do "5 opções" nos ladrilhos (IconeRamo): branco no escuro,
-   cinza no claro — pedido do Marco. O cinza é o texto-suave: em cima dos
-   tons pastel dos ladrilhos ele fica em ~4,4:1, bem visível em traço grosso. */
+/* o ramo antes do "5 opções" nos ladrilhos (IconeRamo): branco e grosso no
+   escuro, cinza e FINO no claro — pedidos do Marco. O cinza é o
+   texto-suave: em cima dos tons pastel dos ladrilhos ele fica em ~4,4:1.
+   O stroke-width daqui ganha do atributo strokeWidth do <svg> (atributo de
+   apresentação perde pra qualquer regra de CSS), e o traço herda. */
 .ramo-opcoes {
   color: var(--color-texto);
 }
 
 :root[data-tema='claro'] .ramo-opcoes {
   color: var(--color-texto-suave);
+  stroke-width: 1.8;
 }
 
 /* OS LADRILHOS DE CATEGORIA do Início do app (telas/Inicio.jsx)
