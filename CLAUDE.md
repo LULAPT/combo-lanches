@@ -114,6 +114,11 @@ direita, **sem hambúrguer**. App: `NavInferior.jsx`, a barra de abas. O
 disco do meio dela (`.disco-marca`) é escuro no tema escuro e esbranquiçado
 no claro; a logo lá dentro está no centro ÓTICO (44px, 2px ACIMA do meio
 da régua, com `mb-1`) — no centro exato ela parecia puxada pra baixo.
+Na aba **Combo**, o disco desce, cresce e pousa no meio da barra (engolindo
+o rótulo "Combo"), a barra abre pros lados, e só DEPOIS o "Adicionar
+combo" sai de trás dela — metade pra fora, o disco cobria o botão. Pedido
+do Marco. O ritmo e a largura extra são o `COMBO_NA_BARRA`
+(`app/animacoes.js`), lido pela barra e pela tela do Combo.
 
 **A sacola tem UM acesso por experiência** (checklist da seção 07: evitar
 duplicidade). Site: a `BolhaCarrinho`, que nasce no canto superior esquerdo

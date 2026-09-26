@@ -4,8 +4,13 @@ import { AnimatePresence, motion, useAnimationControls } from 'motion/react'
 import { ShoppingBag } from 'lucide-react'
 import { useCarrinho } from '@/context/CarrinhoContext'
 import { LogoMontando } from '@/components/Logo'
+import { useMenosMovimento } from '@/hooks/useMenosMovimento'
 import { ABAS } from '@/app/abas'
 import { usePulso } from '@/app/voo'
+import { COMBO_NA_BARRA } from '@/app/animacoes'
+
+// o disco do meio é um Link que também anima (desce e cresce)
+const LinkMovel = motion.create(Link)
 
 /* ============================================================================
    BARRA DE ABAS — a navegação do app, presa embaixo
@@ -23,6 +28,11 @@ import { usePulso } from '@/app/voo'
    ela se monta de novo (pão de cima cai, o de baixo sobe, o COMBO estoura
    no meio — a entrada da hero do site) toda vez que o Combo vira a aba
    ativa.
+
+   NA ABA COMBO o disco desce, cresce e pousa no MEIO da barra, engolindo
+   o rótulo "Combo", e a barra abre pros lados (COMBO_NA_BARRA, em
+   animacoes.js). Fora da aba, ele volta pra beirada e o rótulo reaparece.
+   Metade pra fora da barra, o disco cobria um pedaço do "Adicionar combo".
 
    A aba ativa ganha um realce que DESLIZA de uma aba pra outra (layoutId),
    em vez de piscar no lugar novo.
@@ -43,6 +53,8 @@ import { usePulso } from '@/app/voo'
    nas outras vezes que o app monta, ela já nasce no lugar). */
 export default function NavInferior({ ativa, destinos, logoPousada = true, houveAbertura = false }) {
   const teclado = useTecladoAberto()
+  const menos = useMenosMovimento()
+  const abre = ativa === 'combo' ? -COMBO_NA_BARRA.abre : 0
 
   return (
     <motion.nav
@@ -52,30 +64,42 @@ export default function NavInferior({ ativa, destinos, logoPousada = true, houve
       transition={{ type: 'spring', stiffness: 420, damping: 40 }}
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(12px,env(safe-area-inset-bottom))]"
     >
-      {/* depois da abertura, a barra SOBE de baixo (mola firme: ela precisa
-          assentar antes de a logo descer até o disco) */}
-      <motion.div
-        initial={houveAbertura ? { y: 120, opacity: 0 } : false}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 340, damping: 32 }}
-        className="pointer-events-auto relative mx-auto grid h-[68px] max-w-[480px] grid-cols-5 rounded-[26px]
-                   border border-linha/70 bg-cartao/90 shadow-(--sombra-nav) backdrop-blur-xl"
-      >
-        {ABAS.map((aba) =>
-          aba.centro ? (
-            <BotaoCentro
-              key={aba.id}
-              aba={aba}
-              ativo={ativa === aba.id}
-              para={destinos[aba.id]}
-              logoPousada={logoPousada}
-              houveAbertura={houveAbertura}
-            />
-          ) : (
-            <ItemAba key={aba.id} aba={aba} ativo={ativa === aba.id} para={destinos[aba.id]} />
-          ),
-        )}
-      </motion.div>
+      {/* A caixa de fora centraliza; a barra, dentro dela, abre pros lados
+          com margem NEGATIVA (as duas por igual, então continua no meio).
+          Mexer na margem é mexer no layout, mas é só a barra: é fixa, e o
+          resto da página nem fica sabendo. */}
+      <div className="mx-auto max-w-[480px]">
+        {/* depois da abertura, a barra SOBE de baixo (mola firme: ela
+            precisa assentar antes de a logo descer até o disco) */}
+        <motion.div
+          initial={houveAbertura ? { y: 120, opacity: 0, marginLeft: abre, marginRight: abre } : false}
+          animate={{ y: 0, opacity: 1, marginLeft: abre, marginRight: abre }}
+          transition={{
+            type: 'spring',
+            stiffness: 340,
+            damping: 32,
+            marginLeft: menos ? { duration: 0 } : COMBO_NA_BARRA.mola,
+            marginRight: menos ? { duration: 0 } : COMBO_NA_BARRA.mola,
+          }}
+          className="pointer-events-auto relative grid h-[68px] grid-cols-5 rounded-[26px] border border-linha/70
+                     bg-cartao/90 shadow-(--sombra-nav) backdrop-blur-xl"
+        >
+          {ABAS.map((aba) =>
+            aba.centro ? (
+              <BotaoCentro
+                key={aba.id}
+                aba={aba}
+                ativo={ativa === aba.id}
+                para={destinos[aba.id]}
+                logoPousada={logoPousada}
+                houveAbertura={houveAbertura}
+              />
+            ) : (
+              <ItemAba key={aba.id} aba={aba} ativo={ativa === aba.id} para={destinos[aba.id]} />
+            ),
+          )}
+        </motion.div>
+      </div>
     </motion.nav>
   )
 }
@@ -178,8 +202,20 @@ function ContagemFalada() {
   return <span className="sr-only">, {quantidadeTotal} {quantidadeTotal === 1 ? 'item' : 'itens'}</span>
 }
 
-/* ---- O BOTÃO DO MEIO ---- */
+/* ---- O BOTÃO DO MEIO ----
+   Fora do Combo, o disco mora na BEIRADA de cima da barra, metade pra
+   fora, com o rótulo "Combo" embaixo. No Combo, ele DESCE (o centro dele
+   vai de 5px abaixo da borda de cima pro meio da barra: 28px) e CRESCE
+   (1.16: de 62 pra ~72px, um tico mais alto que a barra — assenta nela
+   como uma moeda), engolindo o rótulo, que encolhe e sobe pra dentro dele.
+   Tudo por transform (y e scale): a logo cresce junto.
+   O aro da cor do fundo (o "entalhe", .disco-marca no index.css) some no
+   meio: ele só faz sentido cortando a borda da barra. */
+const DESCE = 28
+const CRESCE = 1.16
+
 function BotaoCentro({ aba, ativo, para, logoPousada, houveAbertura }) {
+  const menos = useMenosMovimento()
   /* Cada vez que o Combo vira a aba ativa, a logo remonta (key nova) e se
      monta de novo. O "ajuste durante o render" (anterior/vezes) é o jeito
      do React de reagir a uma prop que mudou sem um efeito a mais. */
@@ -192,13 +228,20 @@ function BotaoCentro({ aba, ativo, para, logoPousada, houveAbertura }) {
 
   return (
     <div className="relative flex flex-col items-center justify-end pb-[10px]">
-      <Link
+      <LinkMovel
         to={para}
         onClick={topoSeAtiva(ativo)}
         aria-current={ativo ? 'page' : undefined}
         aria-label="Monte seu combo"
+        // abrindo o app já no Combo, o disco nasce no meio (sem viagem)
+        initial={false}
+        animate={ativo ? { y: DESCE, scale: CRESCE } : { y: 0, scale: 1 }}
+        transition={menos ? { duration: 0 } : COMBO_NA_BARRA.mola}
+        data-no-meio={ativo || undefined}
         // as cores do disco mudam com o tema (.disco-marca, index.css):
-        // escuro no escuro, esbranquiçado com contorno no claro
+        // escuro no escuro, esbranquiçado com contorno no claro. O
+        // -translate-x-1/2 (a propriedade translate) não briga com o y e o
+        // scale da Motion (a propriedade transform): uma soma com a outra.
         className="disco-marca absolute -top-[26px] left-1/2 grid size-[62px] -translate-x-1/2 place-items-center
                    rounded-full"
       >
@@ -223,10 +266,25 @@ function BotaoCentro({ aba, ativo, para, logoPousada, houveAbertura }) {
             <LogoMontando key={vezes} montada cinza={false} desdeFora={vezes > 0 || !houveAbertura} />
           </motion.span>
         )}
-      </Link>
-      <span aria-hidden="true" className={`text-[10.5px] font-semibold transition-colors ${ativo ? 'text-acento' : 'text-texto-suave'}`}>
+      </LinkMovel>
+      {/* o rótulo: no Combo, encolhe e sobe pra dentro do disco (rápido,
+          antes de o disco chegar em cima dele); saindo do Combo, espera o
+          disco começar a subir e só então sai de baixo dele, com quique */}
+      <motion.span
+        aria-hidden="true"
+        initial={false}
+        animate={ativo ? { y: -14, scale: 0.3, opacity: 0 } : { y: 0, scale: 1, opacity: 1 }}
+        transition={
+          menos
+            ? { duration: 0 }
+            : ativo
+              ? { duration: 0.2, ease: [0.55, 0, 1, 0.45] }
+              : { type: 'spring', visualDuration: 0.35, bounce: 0.4, delay: 0.12 }
+        }
+        className={`text-[10.5px] font-semibold transition-colors ${ativo ? 'text-acento' : 'text-texto-suave'}`}
+      >
         {aba.rotulo}
-      </span>
+      </motion.span>
     </div>
   )
 }
