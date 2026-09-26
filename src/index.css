@@ -646,6 +646,19 @@ body {
   overflow-x: clip;
 }
 
+/* O APP: a troca de aba desliza a tela nova 28px de lado (AppCelular.jsx)
+   e, no meio do deslize, ela passa da borda direita. Sem corte, o celular
+   alargava a PÁGINA por um instante — e a barra de abas, fixa de ponta a
+   ponta, esticava e pulava pra direita junto. O clip do body acima não
+   segura isso (o navegador repassa o overflow do body pra janela, ver
+   .secao-empilhada): tem que cortar num elemento de verdade, a caixa que
+   segura as telas. clip e não hidden, pelo mesmo motivo do body. As peças
+   fixas (a barra, a folha do produto, o voo) não são cortadas: quem manda
+   nelas é a janela, não o #root. */
+:root[data-app] #root {
+  overflow-x: clip;
+}
+
 h1,
 h2,
 h3 {
