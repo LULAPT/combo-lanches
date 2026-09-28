@@ -47,7 +47,7 @@ export default function Inicio() {
     >
       <motion.header
         variants={subir}
-        className="flex items-center justify-between gap-3 px-5 pt-[max(env(safe-area-inset-top),16px)]"
+        className="topo-app-inicio flex items-center justify-between gap-3 px-5 pt-[max(env(safe-area-inset-top),16px)]"
       >
         <p className="flex min-w-0 items-center gap-2 rounded-full bg-cartao py-1.5 pr-4 pl-1.5 shadow-(--sombra-cartao)">
           <span className="grid size-7 shrink-0 place-items-center rounded-full bg-tom-acompanhamentos text-texto">

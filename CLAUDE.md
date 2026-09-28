@@ -173,6 +173,19 @@ material do disco da barra (`.bandeja-fileira`), a seta na direita (cutuca
 (`.rolagem-com-fade`) e uma "espiada" única quando a fileira aparece.
 Pedido do Marco. Fileira nova de cartões no app? Use a `Fileira`.
 
+**O pedido depois do pagamento (rastreio).** Confirmado o pagamento
+(simulado), o pedido passa a existir no `PedidoContext`, fora da janela de
+pagamento, e é salvo no localStorage (um F5 não perde o rastreio). Enquanto
+houver pedido, a `BolhaPedido` (moto, canto superior direito, no site e no
+app) mostra o andamento num anel e reabre a janela `RastreioPedido` no
+toque. No app, o `data-pedido` no `<html>` abre espaço no canto (bloco
+BOLINHA DO PEDIDO no `index.css`). Entregue e o rastreio fechado depois
+disso, o pedido acaba e a bolinha some. **Pro back-end:** os passos e os
+tempos da simulação (~2,5 min no total) estão em `data/pedido.js`, que é o
+contrato: quando existir servidor, o status real (`recebido` · `preparo` ·
+`caminho` · `entregue`) substitui o `passoSimulado` dentro do contexto, e
+as telas não mudam.
+
 **Identidade da linha do carrinho** = id do item + assinatura dos adicionais,
 ordenada (`gerarLinhaId`). Sem o `sort()`, escolher {bacon, ovo} e {ovo,
 bacon} criaria duas linhas idênticas na tela.

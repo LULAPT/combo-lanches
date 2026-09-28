@@ -1211,6 +1211,47 @@ h3 {
   animation: rastreio-pulso 1.6s ease-out infinite;
 }
 
+/* a bolinha do pedido (BolhaPedido.jsx): o mesmo pulso, mais lento — ela
+   mora no canto da tela o tempo todo; um pulso rápido ali cansaria */
+.bolha-pedido-pulso {
+  animation: rastreio-pulso 2.2s ease-out infinite;
+}
+
+/* BOLINHA DO PEDIDO no app: espaço no canto superior direito.
+   Enquanto há pedido em andamento (data-pedido no <html>, ligado pelo
+   PedidoContext), a bolinha da moto mora no canto — 48px + o anel, a 20px
+   da borda. O que usava esse canto sai da frente, deslizando:
+     Início        o botão de tema anda pra esquerda
+     títulos       (CabecalhoTela) descem 22px
+     Loja          o cartão da marca desce
+     Cardápio      com a barra de busca GRUDADA no topo, a busca encolhe
+   Sem pedido, tudo volta pro lugar do mesmo jeito. */
+.topo-app-inicio,
+.topo-app,
+.topo-app-loja {
+  transition: padding 0.4s var(--ease-mordida);
+}
+
+:root[data-app][data-pedido] .topo-app-inicio {
+  padding-right: 80px;
+}
+
+:root[data-app][data-pedido] .topo-app {
+  padding-top: calc(max(env(safe-area-inset-top), 20px) + 22px);
+}
+
+:root[data-app][data-pedido] .topo-app-loja {
+  padding-top: calc(max(env(safe-area-inset-top), 20px) + 56px);
+}
+
+.campo-busca {
+  transition: margin 0.4s var(--ease-mordida);
+}
+
+:root[data-app][data-pedido] .barra-filtros[data-presa='true'] .campo-busca {
+  margin-right: 64px;
+}
+
 /* ============================================================================
    ACESSIBILIDADE DE MOVIMENTO
    ----------------------------------------------------------------------------

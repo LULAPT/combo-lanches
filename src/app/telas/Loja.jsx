@@ -40,7 +40,7 @@ export default function Loja({ ativa }) {
       variants={cascata}
       initial="oculto"
       animate="visivel"
-      className="px-5 pt-[max(env(safe-area-inset-top),20px)] pb-[calc(var(--altura-nav)+32px)]"
+      className="topo-app-loja px-5 pt-[max(env(safe-area-inset-top),20px)] pb-[calc(var(--altura-nav)+32px)]"
     >
       <motion.section
         variants={subir}

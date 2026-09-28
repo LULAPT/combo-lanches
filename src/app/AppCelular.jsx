@@ -15,6 +15,7 @@ import Cardapio from '@/app/telas/Cardapio'
 import Combo from '@/app/telas/Combo'
 import Sacola from '@/app/telas/Sacola'
 import Loja from '@/app/telas/Loja'
+import BolhaPedido from '@/components/BolhaPedido'
 
 /* ============================================================================
    APP DO CELULAR — o esqueleto
@@ -123,6 +124,9 @@ export default function AppCelular() {
         <NavInferior ativa={ativa} destinos={destinos} logoPousada={!fase} houveAbertura={houveAbertura} />
       )}
       {!fase && <FolhaItem />}
+      {/* o pedido em andamento: canto superior direito, na altura do botão
+          de tema do Início (as telas abrem espaço — .topo-app no index.css) */}
+      {!fase && <BolhaPedido className="top-[calc(max(env(safe-area-inset-top),16px)-2px)] right-5" />}
       <Abertura
         visivel={fase !== null}
         aoPular={() => setFase(PROXIMA[fase])}

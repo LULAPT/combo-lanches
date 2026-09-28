@@ -78,7 +78,7 @@ export default function Cardapio({ ativa }) {
 
       <div ref={marcoRef} />
       <BarraFiltros>
-        <label className="relative block">
+        <label className="campo-busca relative block">
           <span className="sr-only">Buscar no cardápio</span>
           <Search
             size={19}
@@ -171,7 +171,8 @@ function BarraFiltros({ children }) {
   return (
     <div
       ref={barraRef}
-      className={`sticky top-0 z-20 space-y-3 bg-fundo/88 px-5 pt-[max(env(safe-area-inset-top),12px)] pb-3
+      data-presa={presa}
+      className={`barra-filtros sticky top-0 z-20 space-y-3 bg-fundo/88 px-5 pt-[max(env(safe-area-inset-top),12px)] pb-3
                   backdrop-blur-xl transition-[box-shadow] duration-300
                   ${presa ? 'shadow-[0_1px_0_var(--color-linha),0_10px_24px_-18px_rgb(0_0_0/0.35)]' : ''}`}
     >

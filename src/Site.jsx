@@ -4,6 +4,7 @@ import Landing from '@/pages/Landing'
 import Cardapio from '@/pages/Cardapio'
 import NavRail from '@/components/NavRail'
 import BolhaCarrinho from '@/components/BolhaCarrinho'
+import BolhaPedido from '@/components/BolhaPedido'
 import BotaoTema from '@/components/BotaoTema'
 import CarrinhoDrawer from '@/components/CarrinhoDrawer'
 import MarcaTexto from '@/components/MarcaTexto'
@@ -51,6 +52,9 @@ export default function Site() {
 
       <NavRail />
       <BolhaCarrinho />
+      {/* o pedido em andamento: canto superior direito (a sacola é o
+          esquerdo; o trilho, a borda direita no meio da tela) */}
+      <BolhaPedido className="top-6 right-6" />
       <BotaoTema />
 
       <Routes>

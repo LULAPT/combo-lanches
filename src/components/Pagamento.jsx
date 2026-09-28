@@ -1,19 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  Bike,
-  Check,
-  ChefHat,
-  ClipboardCheck,
-  Copy,
-  House,
-  Info,
-  LoaderCircle,
-  MapPinned,
-  QrCode,
-  X,
-} from 'lucide-react'
+import { Bike, Check, Copy, Info, LoaderCircle, MapPinned, QrCode, X } from 'lucide-react'
 import { LOJA, formatarPreco } from '@/data/cardapio'
+import { usePedido } from '@/context/PedidoContext'
+import { useEntradaSaida } from '@/hooks/useEntradaSaida'
 import TextoTrocando from '@/components/TextoTrocando'
 import QrCodeFalso from '@/components/QrCodeFalso'
 
@@ -32,10 +22,14 @@ import QrCodeFalso from '@/components/QrCodeFalso'
 
    As etapas:
      escolha → gerando → pix ──(4s)──┐
-        └────→ confirmando ──(1,4s)──┴→ concluido ──(botão)──→ acompanhando
+        └────→ confirmando ──(1,4s)──┴→ concluido
 
-   ACOMPANHAR PEDIDO (também simulado): uma linha do tempo — recebido, em
-   preparo, saiu pra entrega, entregue — que anda um passo a cada 4s.
+   NO "CONCLUIDO" O PEDIDO PASSA A EXISTIR: ele é registrado no
+   PedidoContext (iniciarPedido) e segue andando sozinho — recebido, em
+   preparo, saiu pra entrega, entregue — mesmo com esta janela fechada.
+   "Acompanhar pedido" fecha o pagamento e abre a janela de rastreio
+   (RastreioPedido.jsx); fechando ou não, a bolinha da moto (BolhaPedido)
+   fica no canto da tela e traz o rastreio de volta.
 
    AVISO DE SIMULAÇÃO: se o site for ao ar antes do back-end, um cliente de
    verdade não pode sair achando que pagou. Por isso a nota "Simulação" e o
@@ -53,57 +47,8 @@ import QrCodeFalso from '@/components/QrCodeFalso'
 const GERANDO_MS = 700
 const ESPERA_PIX_MS = 4000
 const CONFIRMANDO_MS = 1400
-const SAIDA_MS = 150 // a --dropdown-close-dur do CSS
 
 const CARTOES = { debito: 'Débito', credito: 'Crédito' }
-
-// os passos do "acompanhar pedido" e quanto cada um leva na simulação
-const PASSO_MS = 4000
-const PASSOS = [
-  { id: 'recebido', titulo: 'Pedido recebido', texto: 'A loja já está com o seu pedido', Icone: ClipboardCheck },
-  { id: 'preparo', titulo: 'Em preparo', texto: 'A chapa já está esquentando', Icone: ChefHat },
-  { id: 'caminho', titulo: 'Saiu pra entrega', texto: 'O entregador está a caminho', Icone: Bike },
-  { id: 'entregue', titulo: 'Entregue!', texto: 'Bom apetite', Icone: House },
-]
-
-/* Abrir/fechar com as classes do dropdown: monta sem .is-open (o estado de
-   partida, 97% e invisível), espera o navegador desenhar isso e aí põe
-   .is-open; ao fechar, troca por .is-closing e só desmonta depois que a
-   saída terminou. */
-function useEntradaSaida(aberto) {
-  const [fase, setFase] = useState(aberto ? 'aberto' : 'fechado')
-  const [anterior, setAnterior] = useState(aberto)
-
-  // o jeito do React de "reagir a uma prop que mudou" sem efeito: ajusta o
-  // estado durante o próprio render
-  if (aberto !== anterior) {
-    setAnterior(aberto)
-    setFase(aberto ? 'entrando' : 'saindo')
-  }
-
-  useEffect(() => {
-    if (fase === 'entrando') {
-      // dois quadros: o primeiro desenha o estado de partida
-      let segundo
-      const primeiro = requestAnimationFrame(() => {
-        segundo = requestAnimationFrame(() => setFase('aberto'))
-      })
-      return () => {
-        cancelAnimationFrame(primeiro)
-        cancelAnimationFrame(segundo)
-      }
-    }
-    if (fase === 'saindo') {
-      const id = setTimeout(() => setFase('fechado'), SAIDA_MS)
-      return () => clearTimeout(id)
-    }
-  }, [fase])
-
-  return {
-    montado: fase !== 'fechado',
-    classe: fase === 'aberto' ? 'is-open' : fase === 'saindo' ? 'is-closing' : '',
-  }
-}
 
 /* O "card resize": a caixa de fora tem altura explícita (a medida do
    conteúdo, lida por um ResizeObserver) e a transição do .t-resize anima
@@ -136,12 +81,12 @@ export default function Pagamento({ aberto, total, quantidade, aoFechar, aoConcl
   const [cartao, setCartao] = useState('debito')
   const [pedido, setPedido] = useState(null)
   const [copiado, setCopiado] = useState(false)
-  const [passo, setPasso] = useState(1) // no acompanhar: começa em "em preparo"
   const [anterior, setAnterior] = useState(aberto)
   const cartaoRef = useRef(null)
+  const { iniciarPedido, abrirRastreio } = usePedido()
 
-  // o pedido já foi feito (confirmado ou acompanhando): fechar é concluir
-  const pedidoFeito = etapa === 'concluido' || etapa === 'acompanhando'
+  // o pedido já foi feito (confirmado): fechar é concluir
+  const pedidoFeito = etapa === 'concluido'
 
   // abriu de novo: começa do começo
   if (aberto !== anterior) {
@@ -161,12 +106,18 @@ export default function Pagamento({ aberto, total, quantidade, aoFechar, aoConcl
     return () => clearTimeout(id)
   }, [etapa])
 
-  // acompanhando: um passo a cada PASSO_MS, até "entregue"
+  // confirmou: o pedido passa a existir fora desta janela (PedidoContext).
+  // Quando o back-end existir, é a resposta do servidor que dispara isto.
   useEffect(() => {
-    if (etapa !== 'acompanhando' || passo >= PASSOS.length - 1) return
-    const id = setTimeout(() => setPasso((p) => p + 1), PASSO_MS)
-    return () => clearTimeout(id)
-  }, [etapa, passo])
+    if (etapa !== 'concluido' || !pedido) return
+    iniciarPedido({
+      codigo: pedido.codigo,
+      total: pedido.total,
+      quantidade: pedido.quantidade,
+      metodo,
+      cartao,
+    })
+  }, [etapa, pedido, metodo, cartao, iniciarPedido])
 
   // "Copiado!" volta a ser "Copiar" depois de um instante
   useEffect(() => {
@@ -213,9 +164,10 @@ export default function Pagamento({ aberto, total, quantidade, aoFechar, aoConcl
 
   const fechar = () => (pedidoFeito ? aoConcluir() : aoFechar())
 
+  // fecha o pagamento (concluindo: a sacola esvazia) e abre o rastreio
   const acompanhar = () => {
-    setPasso(1)
-    setEtapa('acompanhando')
+    aoConcluir()
+    abrirRastreio()
   }
 
   const copiar = () => {
@@ -229,8 +181,6 @@ export default function Pagamento({ aberto, total, quantidade, aoFechar, aoConcl
     pix: 'Aguardando pagamento…',
     confirmando: 'Enviando pedido pra loja…',
     concluido: metodo === 'pix' ? 'Pagamento confirmado!' : 'Pedido confirmado!',
-    // o passo atual vira o título — e troca com o text swap a cada avanço
-    acompanhando: PASSOS[passo].titulo,
   }[etapa]
   // gerando e pix são a mesma tela (o esqueleto vira QR sem trocar o miolo)
   const tela = etapa === 'gerando' ? 'pix' : etapa
@@ -330,7 +280,6 @@ export default function Pagamento({ aberto, total, quantidade, aoFechar, aoConcl
                   />
                 )}
 
-                {tela === 'acompanhando' && <Acompanhamento passo={passo} aoFechar={fechar} />}
               </div>
             </div>
           </Redimensiona>
@@ -536,8 +485,9 @@ function Concluido({ metodo, cartao, pedido, valor, aoAcompanhar, aoFechar }) {
   )
 }
 
-/* O "Fechar" das telas finais: neutro, pra o vermelho ficar só com a ação
-   principal (acompanhar). Fechar aqui é concluir: esvazia a sacola. */
+/* O "Fechar" do confirmado: neutro, pra o vermelho ficar só com a ação
+   principal (acompanhar). Fechar aqui é concluir: esvazia a sacola — e o
+   pedido segue andando, com a bolinha da moto no canto da tela. */
 function BotaoFechar({ aoFechar }) {
   return (
     <button
@@ -548,71 +498,5 @@ function BotaoFechar({ aoFechar }) {
     >
       Fechar
     </button>
-  )
-}
-
-/* ---- ACOMPANHAR PEDIDO (simulado) ----
-   A linha do tempo da entrega. O pedido já nasce "recebido" e "em preparo";
-   a cada PASSO_MS ele anda um passo sozinho, até "entregue". O nome do passo
-   atual é o status do topo da janela — troca com o mesmo text swap.
-
-   feito   check branco, linha até o próximo já preenchida
-   atual   o ícone do passo em vermelho, com um anel pulsando
-   depois  cinza, esperando */
-function Acompanhamento({ passo, aoFechar }) {
-  const ultimo = PASSOS.length - 1
-
-  return (
-    <div className="mt-5">
-      <ol>
-        {PASSOS.map(({ id, titulo, texto, Icone }, i) => {
-          // no último passo, "atual" já é "feito": o pedido chegou
-          const feito = i < passo || (passo === ultimo && i === ultimo)
-          const atual = i === passo && !feito
-
-          return (
-            <li key={id} className="relative flex gap-3 pb-5 last:pb-0">
-              {/* o fio até o próximo passo */}
-              {i < ultimo && (
-                <span
-                  aria-hidden="true"
-                  className={`absolute top-9 bottom-1 left-[15px] w-px transition-colors duration-500 ${
-                    i < passo ? 'bg-texto' : 'bg-linha'
-                  }`}
-                />
-              )}
-
-              <span
-                className={`relative grid size-8 shrink-0 place-items-center rounded-full border transition-colors duration-500 ${
-                  feito
-                    ? 'border-texto bg-texto text-fundo'
-                    : atual
-                      ? 'rastreio-atual border-acento text-acento'
-                      : 'border-linha text-texto-suave'
-                }`}
-              >
-                {feito ? <Check size={15} strokeWidth={3} /> : <Icone size={15} />}
-              </span>
-
-              <div className="min-w-0 pt-1">
-                <p className={`text-sm font-semibold transition-colors ${feito || atual ? 'text-texto' : 'text-texto-suave'}`}>
-                  {titulo}
-                </p>
-                <p className="text-xs text-texto-suave">{texto}</p>
-              </div>
-            </li>
-          )
-        })}
-      </ol>
-
-      <p className="mt-4 flex gap-2 text-[11px] leading-relaxed text-texto-suave">
-        <Info size={14} className="mt-px shrink-0" />
-        <span>Simulação: os passos andam sozinhos, pra mostrar como vai ser.</span>
-      </p>
-
-      <div className="mt-4">
-        <BotaoFechar aoFechar={aoFechar} />
-      </div>
-    </div>
   )
 }

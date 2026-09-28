@@ -73,7 +73,7 @@ export function CabecalhoTela({ nota, titulo, acao, barra = true }) {
         </motion.div>
       )}
 
-      <header className="flex items-end justify-between gap-4 px-5 pt-[max(env(safe-area-inset-top),20px)]">
+      <header className="topo-app flex items-end justify-between gap-4 px-5 pt-[max(env(safe-area-inset-top),20px)]">
         <div className="min-w-0">
           {nota && (
             <motion.p

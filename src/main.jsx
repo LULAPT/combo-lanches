@@ -5,6 +5,7 @@ import App from '@/App'
 import { CarrinhoProvider } from '@/context/CarrinhoContext'
 import { TemaProvider } from '@/context/TemaContext'
 import { ModoLeveProvider } from '@/context/ModoLeveContext'
+import { PedidoProvider } from '@/context/PedidoContext'
 import '@/index.css'
 
 /* ============================================================================
@@ -23,6 +24,8 @@ import '@/index.css'
    ModoLeveProvider → por fora do App: o interruptor "Animações" (trilho e
                       rodapé) e tudo que decide se anima precisam saber dele.
    CarrinhoProvider → por fora do App pra qualquer tela alcançar o carrinho.
+   PedidoProvider   → o pedido em andamento (depois do pagamento): a bolinha
+                      da moto e a janela de rastreio, no site e no app.
 
    Se um componente usar useTema() ou useCarrinho() FORA desses embrulhos, o
    hook lança um erro de propósito — e o app inteiro fica em branco. Tela
@@ -34,7 +37,9 @@ createRoot(document.getElementById('root')).render(
       <TemaProvider>
         <ModoLeveProvider>
           <CarrinhoProvider>
-            <App />
+            <PedidoProvider>
+              <App />
+            </PedidoProvider>
           </CarrinhoProvider>
         </ModoLeveProvider>
       </TemaProvider>

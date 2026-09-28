@@ -3,6 +3,7 @@ import { MotionConfig } from 'motion/react'
 import { useCelular } from '@/hooks/useCelular'
 import { useModoLeve } from '@/context/ModoLeveContext'
 import Logo from '@/components/Logo'
+import RastreioPedido from '@/components/RastreioPedido'
 
 /* ============================================================================
    APP — qual das duas experiências?
@@ -41,6 +42,9 @@ export default function App() {
   return (
     <MotionConfig reducedMotion={leve ? 'always' : 'never'}>
       <Suspense fallback={<Abrindo />}>{celular ? <AppCelular /> : <Site />}</Suspense>
+      {/* o rastreio do pedido: o mesmo nas duas experiências, e fora delas
+          — girar o celular com a janela aberta não fecha o rastreio */}
+      <RastreioPedido />
     </MotionConfig>
   )
 }
