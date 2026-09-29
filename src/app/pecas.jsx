@@ -1,5 +1,6 @@
 import { motion, useScroll, useTransform } from 'motion/react'
 import { useMenosMovimento } from '@/hooks/useMenosMovimento'
+import NotaGrifada from '@/app/NotaGrifada'
 
 /* ============================================================================
    PEÇAS DAS TELAS DO APP
@@ -82,7 +83,7 @@ export function CabecalhoTela({ nota, titulo, acao, barra = true }) {
               transition={{ duration: 0.5, delay: 0.02 }}
               className="font-script text-[24px] leading-none text-acento"
             >
-              {nota}
+              <NotaGrifada>{nota}</NotaGrifada>
             </motion.p>
           )}
           <TituloRevelado texto={titulo} className="titulo-app mt-1.5 text-[42px] text-texto" />
@@ -97,7 +98,11 @@ export function TituloSecao({ nota, titulo, acao, className = '' }) {
   return (
     <div className={`flex items-end justify-between gap-4 ${className}`}>
       <div className="min-w-0">
-        {nota && <p className="font-script text-[19px] leading-none text-acento">{nota}</p>}
+        {nota && (
+          <p className="font-script text-[19px] leading-none text-acento">
+            <NotaGrifada>{nota}</NotaGrifada>
+          </p>
+        )}
         <h2 className="titulo-app mt-1 text-[24px] text-texto">{titulo}</h2>
       </div>
       {acao && <div className="shrink-0 pb-0.5">{acao}</div>}

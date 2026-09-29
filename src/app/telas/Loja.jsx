@@ -7,6 +7,7 @@ import { LogoMontando } from '@/components/Logo'
 import IconeInstagram from '@/components/IconeInstagram'
 import Interruptor from '@/components/Interruptor'
 import { cascata, subir } from '@/app/animacoes'
+import NotaGrifada from '@/app/NotaGrifada'
 
 /* ============================================================================
    LOJA — quem é, onde fica, como falar com ela
@@ -54,7 +55,9 @@ export default function Loja({ ativa }) {
         />
         <LogoMontando key={vezes} montada cinza={false} className="mx-auto w-[46%] drop-shadow-[0_10px_14px_var(--sombra-burger)]" />
         <h1 className="titulo-app relative mt-6 text-[34px] text-texto">{LOJA.nome}</h1>
-        <p className="relative font-script text-[25px] leading-none text-acento">{LOJA.slogan.toLowerCase()}</p>
+        <p className="relative font-script text-[25px] leading-none text-acento">
+          <NotaGrifada>{LOJA.slogan.toLowerCase()}</NotaGrifada>
+        </p>
         <p className="relative mt-2.5 text-[13px] text-texto-suave">
           {LOJA.bairro}, {LOJA.municipio} (PE)
         </p>

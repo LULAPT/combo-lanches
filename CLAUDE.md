@@ -76,6 +76,7 @@ estrutura, com outra navegação. Não tente unificar as duas num JSX só.
 | `voo.jsx` | O desenho que voa até a Sacola quando algo é adicionado |
 | `Fileira.jsx` | Fileira de cartões que rola de lado e avisa que rola (seta, fade, espiada) |
 | `EscritaGiz.jsx` | O "lanche de verdade" escrito a giz de cera na abertura |
+| `NotaGrifada.jsx` | O marca-texto automático nas notas em letra manuscrita |
 | `sloganManuscrito.js` | **Gerado** por `scripts/gerar-slogan-manuscrito.mjs` — não edite |
 | `pecas.jsx` · `animacoes.js` | Cabeçalhos das telas e a entrada em cascata |
 
@@ -164,6 +165,15 @@ claras em cima do pão e das batatas ficavam estranhas. Bebidas fica no meio
 nos dois temas. Decisão do Marco. A subida anima **só transform**
 (`translate` + `cqh`), nunca `top`: animar propriedade de layout durante a
 troca de tema (uma View Transition, já pesada) fazia a subida engasgar.
+Tipografia dos ladrilhos: o nome leva o grifo de marca-texto do site por
+trás (`.grifo-ladrilho`), e a contagem aparece GIGANTE e vazada em Oswald
+atrás da comida (`.ladrilho-numero`, os "01, 02…" do desktop): torta,
+vazando pela borda, com o contorno num tom mais escuro da cor do próprio
+ladrilho (tom sobre tom — o foco é a comida) — **só no tema claro**; no
+escuro o número some. Os três surgem EM ORDEM (Hambúrgueres → Acompanhamentos
+→ Bebidas, um gatilho só: a grade entrando na tela) e CONTAM até a
+quantidade com o `CountUp` do ReactBits. No claro, o "X opções" e o ramo são
+pretos. Decisões do Marco.
 
 **As fileiras que rolam de lado (app) avisam que rolam.** As etapas do
 Monte seu combo (5 a 7 opções) e o "Pra começar" do Início: só 2 ou 3
@@ -185,6 +195,16 @@ tempos da simulação (~2,5 min no total) estão em `data/pedido.js`, que é o
 contrato: quando existir servidor, o status real (`recebido` · `preparo` ·
 `caminho` · `entregue`) substitui o `passoSimulado` dentro do contexto, e
 as telas não mudam.
+
+**Marca-texto nas notas manuscritas (app).** Toda nota em Caveat do app
+("boa noite!", "tá a fim de quê?", "turbine do seu jeito", os extras da
+sacola, o slogan da Loja…) passa pelo `NotaGrifada`: quando o texto CHEGA
+na tela (acima da barra de abas) e depois de um respiro, a caneta do site
+passa por trás dele — cada traço levemente torto, sorteado por nota. A
+letra continua vermelha. Na abertura, o "lanche de verdade" é grifado
+quando o giz termina. Exceções pedidas pelo Marco: os dois cartões grandes
+do Início ("é o nome da casa", "o mais completo") ficam sem grifo. Nota
+manuscrita nova no app? Embrulhe no `NotaGrifada`.
 
 **Identidade da linha do carrinho** = id do item + assinatura dos adicionais,
 ordenada (`gerarLinhaId`). Sem o `sort()`, escolher {bacon, ovo} e {ovo,
@@ -245,10 +265,10 @@ produto são `<button>` (ou têm um), nunca `<div onClick>`.
 esses arquivos** — quem for atualizar depois vai sobrescrever. Precisa mudar o
 comportamento? Embrulhe num componente seu (ou reescreva, como o Fagulhas).
 
-Em uso hoje: `Magnet` e `ScrollVelocity`, os dois na hero do site.
-Instalados e sem uso: `Aurora` (WebGL, `ogl`), `SplitText` e
-`AnimatedContent` (GSAP), `RotatingText`, `ClickSpark`, `CountUp`,
-`SpotlightCard`.
+Em uso hoje: `Magnet` e `ScrollVelocity` (hero do site) e `CountUp` (os
+números vazados das categorias no Início do app). Instalados e sem uso:
+`Aurora` (WebGL, `ogl`), `SplitText` e `AnimatedContent` (GSAP),
+`RotatingText`, `ClickSpark`, `SpotlightCard`.
 
 ⚠️ `ScrollVelocity` é **export nomeado** (`import { ScrollVelocity }`); todos
 os outros são default.

@@ -479,18 +479,25 @@
     --fade-dir 0.35s ease;
 }
 
-/* o ramo antes do "5 opções" nos ladrilhos (IconeRamo): branco e grosso no
-   escuro, cinza e FINO no claro — pedidos do Marco. O cinza é o
-   texto-suave: em cima dos tons pastel dos ladrilhos ele fica em ~4,4:1.
-   O stroke-width daqui ganha do atributo strokeWidth do <svg> (atributo de
-   apresentação perde pra qualquer regra de CSS), e o traço herda. */
+/* o ramo antes do "5 opções" nos ladrilhos (IconeRamo): branco no escuro
+   (traço 1,7, o strokeWidth do JSX) e PRETO no claro, mais FINO (1,2) —
+   preto em cima do pastel pesa mais que branco no escuro, então o mesmo
+   traço parecia grosso. Pedidos do Marco. O stroke-width daqui ganha do
+   atributo strokeWidth do <svg> (atributo de apresentação perde pra
+   qualquer regra de CSS), e o traço herda. */
 .ramo-opcoes {
   color: var(--color-texto);
 }
 
 :root[data-tema='claro'] .ramo-opcoes {
-  color: var(--color-texto-suave);
-  stroke-width: 1.8;
+  stroke-width: 1.2;
+}
+
+/* o "5 opções" dos ladrilhos: no claro, preto como o nome da categoria
+   (a cor de texto do tema, #1e1d1c — 13:1 em cima dos tons pastel); no
+   escuro continua o branco um tico apagado (text-texto/75, no JSX). */
+:root[data-tema='claro'] .opcoes-ladrilho {
+  color: var(--color-texto);
 }
 
 /* OS LADRILHOS DE CATEGORIA do Início do app (telas/Inicio.jsx)
@@ -522,6 +529,101 @@
 
 :root[data-app]:not([data-tema='claro']) .ladrilho[data-sobe] .ladrilho-texto {
   translate: 0 0;
+}
+
+/* O NÚMERO VAZADO dos ladrilhos: a contagem da categoria, gigante, só o
+   contorno — em Oswald de propósito (a letra do site; no app o
+   --font-display vira Bricolage, então o nome vai escrito aqui), como os
+   "01, 02…" da seção de burgers do desktop. Contorno na cor do texto, bem
+   fraco: é fundo, não informação (quem lê a contagem é o "5 opções").
+
+   Mora no CANTO DE CIMA, atrás do desenho. SÓ NO TEMA CLARO — decisão do
+   Marco: no escuro ele some (os nomes sobem pro topo e a comida já
+   preenche o ladrilho). Some com filter: opacity, e não com opacity: a
+   opacity é da Motion (a entrada do número, whileInView, escreve inline e
+   ganharia de qualquer regra daqui). Com transição, a troca de tema faz o
+   número esmaecer em vez de sumir seco. */
+.ladrilho-numero {
+  top: 0.5rem;
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: transparent;
+  /* o contorno é um tom MAIS ESCURO da cor do próprio ladrilho (--tom +
+     --tinta, por categoria, logo abaixo) — decisão do Marco: cinza
+     destacava demais, e o foco do ladrilho é a comida. Tom sobre tom, o
+     número vira textura do fundo. */
+  -webkit-text-stroke: 1.5px color-mix(in oklab, var(--tom-numero) 60%, var(--tinta-numero));
+  transition: filter 0.4s ease;
+}
+
+.ladrilho[data-categoria='hamburgueres'] {
+  --tom-numero: var(--color-tom-hamburgueres);
+  --tinta-numero: #c9820f; /* âmbar: o amarelo do pão, mais escuro */
+}
+
+.ladrilho[data-categoria='acompanhamentos'] {
+  --tom-numero: var(--color-tom-acompanhamentos);
+  --tinta-numero: #d4553a; /* coral: o rosa do ladrilho, mais fundo */
+}
+
+.ladrilho[data-categoria='bebidas'] {
+  --tom-numero: var(--color-tom-bebidas);
+  --tinta-numero: #3f9a78; /* verde-menta mais fechado */
+}
+
+:root[data-app]:not([data-tema='claro']) .ladrilho-numero {
+  filter: opacity(0);
+}
+
+/* data-topo (Acompanhamentos): o nome fica no TOPO nos dois temas — no
+   escuro, onde o data-sobe já o levava pra cima, e no claro também — e o
+   número troca de lugar com ele: DESCE pro canto de baixo à esquerda,
+   abaixo do texto e fora de trás da batata. */
+.ladrilho[data-topo] .ladrilho-texto {
+  translate: 0 0;
+}
+
+/* TORTOS E VAZANDO: cada número tem a própria inclinação e é empurrado
+   pra FORA da borda do ladrilho (o overflow-hidden do ladrilho corta) —
+   parece um adesivo colado meio torto, não um número alinhado. A
+   inclinação é a propriedade `rotate` do CSS, separada do `transform` que
+   a Motion anima na entrada: as duas se somam, uma não apaga a outra.
+     Hambúrgueres     canto de cima, vazando pro alto e pra direita
+     Acompanhamentos  embaixo, à esquerda (o nome fica no topo), vazando
+                      pra baixo — pedido do Marco: o texto sobe, o 05 desce
+     Bebidas          canto de cima, vazando pra direita */
+.ladrilho[data-categoria='hamburgueres'] .ladrilho-numero {
+  top: -1rem;
+  right: -0.45rem;
+  rotate: -9deg;
+}
+
+.ladrilho[data-categoria='acompanhamentos'] .ladrilho-numero {
+  top: auto;
+  bottom: -1.5rem;
+  left: 0.7rem;
+  rotate: 7deg;
+}
+
+.ladrilho[data-categoria='bebidas'] .ladrilho-numero {
+  top: -0.85rem;
+  right: 0.15rem;
+  rotate: -13deg;
+}
+
+/* O GRIFO atrás do nome do ladrilho: o traço de marca-texto do site
+   (--grifo, o vermelho da casa translúcido), na metade de baixo das letras.
+   A Motion anima o background-size de 0% a 100% da largura (Inicio.jsx). */
+.grifo-ladrilho {
+  background-image: linear-gradient(var(--grifo), var(--grifo));
+  background-repeat: no-repeat;
+  background-position: left 88%;
+  background-size: 100% 42%;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding: 0 0.12em;
+  margin: 0 -0.12em;
 }
 
 /* o título do app: Bricolage pesada e um tico condensada, com as letras
@@ -901,6 +1003,56 @@ h3 {
 .grifo[data-grifado='true'] {
   background-size: 100% 100%;
   color: var(--color-texto);
+}
+
+/* O ADESIVO DO ✓ (Monte seu combo do app, telas/Combo.jsx): um adesivo
+   redondo colado no canto do cartão escolhido — o vermelho do botão com um
+   brilho em cima (luz batendo no plástico), a borda BRANCA grossa de
+   adesivo recortado (branca nos dois temas: adesivo é assim) e uma sombra
+   curta, de coisa colada, não flutuando. */
+.adesivo-selo {
+  background:
+    radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.38), transparent 46%),
+    var(--color-botao);
+  border: 2.5px solid #fff;
+  box-shadow:
+    inset 0 -2px 0 rgb(0 0 0 / 0.12),
+    0 3px 6px -2px rgb(60 30 10 / 0.45);
+}
+
+/* A NOTA GRIFADA do app (src/app/NotaGrifada.jsx): o mesmo traço, nas
+   notas em letra manuscrita. A letra mantém a cor dela (o vermelho da
+   casa); o traço cobre a metade de baixo das letras, como uma caneta de
+   verdade passando por cima da escrita, e cresce da esquerda pra direita.
+
+   TORTINHO, cada um de um jeito (pedido do Marco, "bem de leve"): o traço
+   é uma FAIXA dentro de um degradê — transparente, cor, transparente — e o
+   ângulo do degradê (--inclina) entorta as bordas da faixa sem girar a
+   letra. --desvio sobe ou desce a faixa um tico. Os dois são sorteados por
+   nota no NotaGrifada.jsx: 0,8° a 2,2° pra cima ou pra baixo, até 1,5px. */
+.grifo-nota {
+  --traco-nota: var(--grifo);
+  background-color: transparent; /* mata o amarelo padrão do <mark> */
+  color: inherit;
+  background-image: linear-gradient(
+    calc(180deg + var(--inclina, 0deg)),
+    transparent 44%,
+    var(--traco-nota) 44% 96%,
+    transparent 96%
+  );
+  background-repeat: no-repeat;
+  background-position: left var(--desvio, 0px);
+  background-size: 0% 100%;
+  border-radius: 3px;
+  padding: 0 0.14em;
+  margin: 0 -0.14em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-size 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.grifo-nota[data-grifado='true'] {
+  background-size: 100% 100%;
 }
 
 /* ============================================================================

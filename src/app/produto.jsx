@@ -118,7 +118,12 @@ export function CartaoLinha({ item }) {
 
       <div className="pointer-events-none relative flex min-w-0 flex-1 flex-col py-1 pr-1">
         <h3 className="titulo-app text-[17px] leading-tight text-texto">{item.nome}</h3>
-        <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-texto-suave">{item.descricao}</p>
+        {/* pr-8: as duas linhas param no limite do X-Tudo que o Marco aprovou
+            ("…queijo…"), rente ao canto do "+" (40px do botão,
+            a 12px da borda, + um respiro). Sem isso a segunda linha corria
+            por cima do botão e o "…" caía em qualquer lugar; assim ele cai
+            sempre no mesmo limite, à esquerda do botão. */}
+        <p className="mt-1 line-clamp-2 pr-8 text-[12.5px] leading-snug text-texto-suave">{item.descricao}</p>
         <p className="mt-auto pt-2 font-app text-[17px] font-bold text-texto tabular-nums">
           {formatarPreco(item.preco)}
         </p>

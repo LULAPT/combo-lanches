@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { AnimatePresence, motion, useDragControls } from 'motion/react'
-import { Minus, X } from 'lucide-react'
+import { Check, Minus, X } from 'lucide-react'
 import { ADICIONAIS, camadasDoPedido, formatarPreco } from '@/data/cardapio'
 import { useCarrinho } from '@/context/CarrinhoContext'
 import { useMenosMovimento } from '@/hooks/useMenosMovimento'
@@ -13,6 +13,9 @@ import Preco from '@/components/Preco'
 import { useVoo } from '@/app/voo'
 import { useItemAberto } from '@/app/useItemAberto'
 import { TOM } from '@/app/abas'
+import NotaGrifada from '@/app/NotaGrifada'
+import ContornoGiz from '@/app/ContornoGiz'
+import Adesivo from '@/app/Adesivo'
 
 /* ============================================================================
    FOLHA DO PRODUTO — o "detalhe do item" do app
@@ -213,7 +216,9 @@ function Folha({ item, aoFechar }) {
                 <h3 id={`${tituloId}-extras`} className="titulo-app text-[21px] text-texto">
                   Adicionais
                 </h3>
-                <span className="font-script text-[19px] leading-none text-acento">turbine do seu jeito</span>
+                <span className="font-script text-[19px] leading-none text-acento">
+                  <NotaGrifada>turbine do seu jeito</NotaGrifada>
+                </span>
               </div>
 
               <ul className="mt-3.5 grid grid-cols-3 gap-2.5">
@@ -268,8 +273,10 @@ function BurgerDaVitrine({ camadas, aberto }) {
 }
 
 /* ---- UM ADICIONAL ----
-   Tocar no ladrilho põe +1 (até o máximo). Escolhido, ele ganha o aro
-   vermelho, a contagem no canto e um "−" pra tirar. */
+   Tocar no ladrilho põe +1 (até o máximo). Escolhido, ele é CIRCULADO A GIZ
+   (ContornoGiz) e ganha o ADESIVO no canto (Adesivo) — o mesmo par do
+   Monte seu combo. O adesivo diz quanto: ✓ com 1, e o número com 2 ou 3
+   (troca deslizando). E um "−" no canto esquerdo pra tirar. */
 function Adicional({ adicional, qtd, aoMais, aoMenos }) {
   const nome = nomeCurto(adicional.nome)
   const cheio = qtd >= adicional.max
@@ -285,10 +292,10 @@ function Adicional({ adicional, qtd, aoMais, aoMenos }) {
             ? `${nome}: já está no máximo (${adicional.max})`
             : `Adicionar ${nome}, mais ${formatarPreco(adicional.preco)}${qtd ? `. ${qtd} escolhido${qtd > 1 ? 's' : ''}` : ''}`
         }
-        className={`flex w-full flex-col items-center rounded-2xl bg-cartao px-1.5 pt-3 pb-2.5 text-center
-                    shadow-(--sombra-cartao) ring-2 transition-[box-shadow,scale] duration-200 active:scale-95
-                    ${qtd ? 'ring-acento' : 'ring-transparent'}`}
+        className="relative flex w-full flex-col items-center rounded-2xl bg-cartao px-1.5 pt-3 pb-2.5 text-center
+                   shadow-(--sombra-cartao) transition-[scale] duration-200 active:scale-95"
       >
+        <AnimatePresence>{qtd > 0 && <ContornoGiz key="contorno" raio={20} />}</AnimatePresence>
         <Amostra tipo={adicional.camada} />
         <span className="mt-2 text-[12.5px] leading-tight font-semibold text-texto">{nome}</span>
         <span className="mt-0.5 text-[11.5px] text-texto-suave tabular-nums">+ {formatarPreco(adicional.preco)}</span>
@@ -296,28 +303,20 @@ function Adicional({ adicional, qtd, aoMais, aoMenos }) {
 
       <AnimatePresence>
         {qtd > 0 && (
-          <motion.span
-            key="contagem"
-            aria-hidden="true"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            transition={{ type: 'spring', stiffness: 600, damping: 26 }}
-            className="absolute -top-2 -right-1.5 grid size-6 place-items-center overflow-hidden rounded-full bg-botao
-                       text-[12px] font-bold text-white ring-2 ring-fundo tabular-nums"
-          >
+          <Adesivo key="contagem">
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
                 key={qtd}
-                initial={{ y: 10, opacity: 0 }}
+                initial={{ y: 12, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -10, opacity: 0 }}
+                exit={{ y: -12, opacity: 0 }}
                 transition={{ duration: 0.16 }}
+                className="grid place-items-center text-[14px] font-bold tabular-nums"
               >
-                {qtd}
+                {qtd === 1 ? <Check size={16} strokeWidth={3.4} /> : qtd}
               </motion.span>
             </AnimatePresence>
-          </motion.span>
+          </Adesivo>
         )}
         {qtd > 0 && (
           <motion.button

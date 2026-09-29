@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react'
+import { AnimatePresence, motion, useAnimationFrame, useInView, useMotionValue, useScroll, useTransform } from 'motion/react'
 import { ArrowRight, MapPin, Moon, Search, Sun } from 'lucide-react'
 import { LOJA, formatarPreco } from '@/data/cardapio'
 import { useCardapio } from '@/hooks/useCardapio'
@@ -13,7 +13,9 @@ import { useItemAberto } from '@/app/useItemAberto'
 import { TituloRevelado, TituloSecao } from '@/app/pecas'
 import { cascata, subir } from '@/app/animacoes'
 import { TOM } from '@/app/abas'
+import NotaGrifada from '@/app/NotaGrifada'
 import IconeRamo from '@/components/IconeRamo'
+import CountUp from '@/components/reactbits/CountUp'
 import Fileira from '@/app/Fileira'
 
 /* ============================================================================
@@ -37,6 +39,10 @@ export default function Inicio() {
   const navigate = useNavigate()
   const { itens, maisPedidos } = useCardapio()
   const quantos = (categoria) => itens.filter((item) => item.categoria === categoria).length
+  // um gatilho só pros três ladrilhos: os números vazados entram EM ORDEM
+  // (ver NumeroVazado) quando a grade passa da barra de abas
+  const gradeRef = useRef(null)
+  const gradeNaTela = useInView(gradeRef, { once: true, margin: '0px 0px -100px 0px' })
 
   return (
     <motion.div
@@ -62,7 +68,9 @@ export default function Inicio() {
       </motion.header>
 
       <motion.div variants={subir} className="px-5 pt-7">
-        <p className="font-script text-[25px] leading-none text-acento">{saudacao()}</p>
+        <p className="font-script text-[25px] leading-none text-acento">
+          <NotaGrifada>{saudacao()}</NotaGrifada>
+        </p>
         <TituloRevelado texto="Bateu a fome?" className="titulo-app mt-1.5 text-[44px] text-texto" atraso={0.12} />
       </motion.div>
 
@@ -84,10 +92,13 @@ export default function Inicio() {
 
       <motion.section variants={subir} className="px-5 pt-9">
         <TituloSecao nota="tá a fim de quê?" titulo="Categorias" />
-        <div className="mt-3.5 grid h-[252px] grid-cols-2 grid-rows-2 gap-3">
+        <div ref={gradeRef} className="mt-3.5 grid h-[252px] grid-cols-2 grid-rows-2 gap-3">
           <Ladrilho
             id="hamburgueres"
+            ordem={0}
+            gradeNaTela={gradeNaTela}
             sobe
+            destaque
             nome="Hambúrgueres"
             quantos={quantos('hamburgueres')}
             className="row-span-2"
@@ -99,7 +110,9 @@ export default function Inicio() {
           />
           <Ladrilho
             id="acompanhamentos"
-            sobe
+            ordem={1}
+            gradeNaTela={gradeNaTela}
+            topo
             // o hífen "invisível" (\u00AD) marca onde a palavra pode quebrar:
             // em tela de 320px ela vira "Acompanha-/mentos", em vez de o
             // navegador quebrar em qualquer letra
@@ -113,6 +126,8 @@ export default function Inicio() {
           />
           <Ladrilho
             id="bebidas"
+            ordem={2}
+            gradeNaTela={gradeNaTela}
             nome="Bebidas"
             quantos={quantos('bebidas')}
             arte={
@@ -232,26 +247,17 @@ function Destaques({ itens }) {
           <span className="font-script text-[24px] leading-none text-[#ffe28a]">é o nome da casa</span>
           <span className="titulo-app mt-1.5 text-[29px]">Monte seu combo</span>
           <span className="mt-1.5 text-[13px] leading-snug">Lanche do seu jeito.</span>
-          <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[13px] font-bold text-botao">
-            Montar <ArrowRight size={15} strokeWidth={2.6} />
-          </span>
+          <BotaoMontar menos={menos} />
         </span>
 
-        {/* a comida passa da borda de cima do cartão */}
+        {/* a comida passa da borda de cima do cartão; a batata e a lata
+            ORBITAM o hambúrguer (Orbita, lá embaixo) */}
         <motion.span
           aria-hidden="true"
           style={{ x: menos ? 0 : arte1 }}
-          className="pointer-events-none absolute right-1 bottom-4 flex w-[50%] items-end"
+          className="pointer-events-none absolute right-1 bottom-4 block w-[50%]"
         >
-          <span className="relative z-0 -mr-6 mb-2 block h-[84px] -rotate-12">
-            <Fritas className="block h-full w-auto overflow-visible drop-shadow-[0_8px_10px_rgb(0_0_0/0.25)]" />
-          </span>
-          <span className="animate-flutua relative z-10 block w-[74%] drop-shadow-[0_12px_14px_rgb(0_0_0/0.3)]">
-            {lancheDoCombo && <MiniBurger camadas={lancheDoCombo.camadas} justo />}
-          </span>
-          <span className="relative z-20 -ml-5 block h-[66px] rotate-12">
-            <Lata cor="#d9241c" className="block h-full w-auto overflow-visible drop-shadow-[0_8px_10px_rgb(0_0_0/0.25)]" />
-          </span>
+          <Orbita lanche={lancheDoCombo} />
         </motion.span>
       </button>
 
@@ -290,6 +296,113 @@ function Destaques({ itens }) {
         </button>
       )}
     </div>
+  )
+}
+
+/* ---- O "MONTAR" DO CARTÃO DO COMBO ----
+   Quando o Início aparece, o botão chama atenção uma vez: a seta dá duas
+   piscadas pra direita ("vai por aqui") e o botão ESTICA pra direita junto
+   com cada uma — só pra direita, na direção da seta: o que cresce é o
+   espaço à direita (padding-right), não o botão inteiro (um scale incharia
+   pra cima e pra baixo também). Espera a entrada da tela terminar (ATRASO_MONTAR) e
+   não repete — um botão que pisca pra sempre vira ruído. Com menos
+   movimento, fica parado. É um <span> (o cartão inteiro já é o botão). */
+const ATRASO_MONTAR = 1.1
+const PISCADAS = { duration: 1.1, times: [0, 0.22, 0.45, 0.67, 1], ease: 'easeInOut' }
+
+function BotaoMontar({ menos }) {
+  return (
+    <motion.span
+      initial={false}
+      // 14px é o pr-3.5 de sempre; nas piscadas vai a 22px
+      style={{ paddingRight: 14 }}
+      animate={menos ? {} : { paddingRight: [14, 22, 14, 22, 14] }}
+      transition={{ ...PISCADAS, delay: ATRASO_MONTAR }}
+      className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-white py-2 pl-3.5 text-[13px] font-bold
+                 text-botao"
+    >
+      Montar
+      <motion.span
+        initial={false}
+        animate={menos ? {} : { x: [0, 5, 0, 5, 0] }}
+        transition={{ ...PISCADAS, delay: ATRASO_MONTAR }}
+        className="flex"
+      >
+        <ArrowRight size={15} strokeWidth={2.6} />
+      </motion.span>
+    </motion.span>
+  )
+}
+
+/* ---- A ÓRBITA DO CARTÃO DO COMBO ----
+   A batata e a lata giram em volta do hambúrguer, devagar, numa elipse
+   deitada (larga e baixinha) — vista de lado, como um prato girando:
+     na frente   mais embaixo, tamanho cheio, POR CIMA do hambúrguer
+     atrás       mais em cima, menor, POR TRÁS dele
+   As duas em lados opostos da elipse (meia volta de diferença): quando a
+   batata passa na frente, a lata passa atrás. Cada uma inclina pra fora
+   (a batata pra esquerda, a lata pra direita) conforme o lado em que está.
+
+   Um ângulo só (theta) move as duas. Ele anda a cada quadro da tela
+   (useAnimationFrame) — mas só com o cartão NA TELA (useInView): em outra
+   aba ou rolado pra longe, a órbita para e não gasta bateria. Com menos
+   movimento, fica parada na pose de antes (batata à esquerda, lata à
+   direita). */
+const VOLTA_MS = 11000 // uma volta inteira
+const RAIO_X = 54 // px, pros lados
+const RAIO_Y = 9 // px, pra cima/baixo (a profundidade)
+
+function Orbita({ lanche }) {
+  const caixaRef = useRef(null)
+  const menos = useMenosMovimento()
+  const naTela = useInView(caixaRef)
+  // começa com a batata à esquerda e a lata à direita, as duas de lado
+  const theta = useMotionValue(0)
+
+  useAnimationFrame((_, delta) => {
+    if (menos || !naTela) return
+    theta.set(theta.get() + (delta / VOLTA_MS) * Math.PI * 2)
+  })
+
+  return (
+    <span ref={caixaRef} className="relative block">
+      <span className="animate-flutua relative z-10 mx-auto block w-[64%] drop-shadow-[0_12px_14px_rgb(0_0_0/0.3)]">
+        {lanche && <MiniBurger camadas={lanche.camadas} justo />}
+      </span>
+
+      <Satelite theta={theta} fase={Math.PI} altura={84}>
+        <Fritas className="block h-full w-auto overflow-visible drop-shadow-[0_8px_10px_rgb(0_0_0/0.25)]" />
+      </Satelite>
+      <Satelite theta={theta} fase={0} altura={66}>
+        <Lata cor="#d9241c" className="block h-full w-auto overflow-visible drop-shadow-[0_8px_10px_rgb(0_0_0/0.25)]" />
+      </Satelite>
+    </span>
+  )
+}
+
+/* Um item em órbita. `fase` é onde ele está na elipse quando theta = 0:
+   π = esquerda, 0 = direita. Tudo sai de um ângulo só:
+     x      cos → de um lado pro outro
+     prof.  sin → +1 na frente, -1 atrás */
+function Satelite({ theta, fase, altura, children }) {
+  const angulo = useTransform(theta, (t) => t + fase)
+  const x = useTransform(angulo, (a) => Math.cos(a) * RAIO_X)
+  const y = useTransform(angulo, (a) => Math.sin(a) * RAIO_Y)
+  const scale = useTransform(angulo, (a) => 0.86 + 0.14 * ((Math.sin(a) + 1) / 2))
+  const rotate = useTransform(angulo, (a) => Math.cos(a) * 12)
+  // na frente do hambúrguer (z 10) ou atrás dele
+  const zIndex = useTransform(angulo, (a) => (Math.sin(a) > 0 ? 20 : 0))
+
+  return (
+    // largura ZERO no centro do hambúrguer, com o desenho centralizado nela
+    // (vaza igual pros dois lados): o giro e a escala acontecem em volta do
+    // pé do desenho, e o x da órbita não briga com um translate de centrar
+    <motion.span
+      className="absolute bottom-[4%] left-1/2 flex w-0 origin-bottom justify-center"
+      style={{ height: altura, x, y, scale, rotate, zIndex }}
+    >
+      <span className="block h-full shrink-0">{children}</span>
+    </motion.span>
   )
 }
 
@@ -334,9 +447,22 @@ function Gergelim() {
    desliza pro topo e sai de cima do desenho. Bebidas fica no meio nos dois
    temas (as garrafas estão de lado, não passam por baixo do texto).
    A subida é CSS (.ladrilho-texto no index.css): anima sozinha na troca
-   de tema, enquanto o círculo do tema novo cresce pela tela. */
-function Ladrilho({ id, nome, quantos, arte, sobe = false, className = '' }) {
+   de tema, enquanto o círculo do tema novo cresce pela tela.
+
+   A TIPOGRAFIA (o "cru" que o Marco apontou), com duas marcas do site:
+     o número   a contagem ("05", "19") GIGANTE e vazada, em Oswald — os
+                números "01, 02…" da seção de burgers do desktop. Fica
+                ATRÁS do desenho (a comida passa na frente, efeito de
+                cartaz em camadas), no canto de cima. Só no tema claro:
+                no escuro ele some (.ladrilho-numero no index.css).
+     o grifo    o traço de marca-texto do site passa por trás do nome, da
+                esquerda pra direita, quando o ladrilho aparece.
+   `destaque`: o ladrilho alto (Hambúrgueres) — nome maior.
+   `topo`: o nome fica no TOPO nos dois temas, e o número desce pra baixo
+   dele (Acompanhamentos — pedido do Marco). */
+function Ladrilho({ id, nome, quantos, arte, ordem = 0, gradeNaTela = false, sobe = false, topo = false, destaque = false, className = '' }) {
   const navigate = useNavigate()
+  const menos = useMenosMovimento()
 
   return (
     <motion.button
@@ -345,15 +471,34 @@ function Ladrilho({ id, nome, quantos, arte, sobe = false, className = '' }) {
       whileTap="apertado"
       variants={{ apertado: { scale: 0.97 } }}
       data-sobe={sobe || undefined}
+      data-topo={topo || undefined}
+      data-categoria={id}
       className={`ladrilho relative overflow-hidden rounded-3xl text-left ${TOM[id]} ${className}`}
     >
+      {/* o número vazado: antes do desenho no HTML = atrás dele na tela */}
+      <NumeroVazado quantos={quantos} ordem={ordem} mostrar={gradeNaTela} destaque={destaque} />
+
       <span className="ladrilho-texto absolute inset-x-4 z-10 block">
-        {/* Condensada (font-stretch 76%) e encolhendo com a tela até 15,5px:
-            "Acompanhamentos" inteiro cabe num ladrilho de meia tela até em
-            celular de 360px. Menor que isso, quebra no hífen marcado no nome
-            (ver o ladrilho de Acompanhamentos), em vez de ser cortado. */}
-        <span className="titulo-app block text-[clamp(15.5px,4.8vw,18px)] leading-[1.02] text-texto [font-stretch:76%]">
-          {nome}
+        {/* Condensada (font-stretch 76%) e encolhendo com a tela: o nome
+            inteiro cabe no ladrilho até em celular de 360px. Menor que isso,
+            "Acompanhamentos" quebra no hífen marcado no nome (ver o ladrilho
+            dele), em vez de ser cortado.
+            O grifo é um degradê de fundo que cresce de 0 a 100% da largura
+            (a mesma técnica do .grifo do site); o box-decoration-break faz
+            ele acompanhar a quebra de linha, se houver. */}
+        <span
+          className={`titulo-app block leading-[1.02] text-texto [font-stretch:76%]
+                      ${destaque ? 'text-[clamp(19px,5.6vw,23px)]' : 'text-[clamp(15.5px,4.8vw,18px)]'}`}
+        >
+          <motion.span
+            className="grifo-ladrilho"
+            initial={menos ? false : { backgroundSize: '0% 42%' }}
+            whileInView={{ backgroundSize: '100% 42%' }}
+            viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+            transition={{ duration: 0.6, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {nome}
+          </motion.span>
         </span>
         <Opcoes quantos={quantos} />
       </span>
@@ -366,6 +511,45 @@ function Ladrilho({ id, nome, quantos, arte, sobe = false, className = '' }) {
         {arte}
       </motion.span>
     </motion.button>
+  )
+}
+
+/* ---- O NÚMERO VAZADO DO LADRILHO ----
+   Os três surgem EM ORDEM — Hambúrgueres, Acompanhamentos, Bebidas — um
+   gatilho só (a grade entrando na tela, lá no Inicio) e um atraso por
+   posição (ENTRE_NUMEROS). Cada um:
+     1. entra subindo e GIRANDO um tico até assentar na inclinação dele
+        (a inclinação e o "vazar da borda": .ladrilho-numero no index.css);
+     2. CONTA de 0 até a quantidade — o CountUp do ReactBits (a mola dele:
+        rápido no começo, freando no fim), um tico depois de aparecer.
+   O CountUp não tem zero à esquerda: nos números de um dígito, o "0" da
+   frente é fixo e ele conta só o segundo ("00" → "05"). O 19 conta de 0 a
+   19. Com menos movimento, o número já nasce pronto, sem entrar nem contar. */
+const ATRASO_NUMERO = 0.15
+const ENTRE_NUMEROS = 0.35
+
+function NumeroVazado({ quantos, ordem, mostrar, destaque }) {
+  const menos = useMenosMovimento()
+  const atraso = ATRASO_NUMERO + ordem * ENTRE_NUMEROS
+
+  return (
+    <motion.span
+      aria-hidden="true"
+      initial={menos ? false : { opacity: 0, y: 22, rotate: -14, scale: 0.9 }}
+      animate={menos || mostrar ? { opacity: 1, y: 0, rotate: 0, scale: 1 } : undefined}
+      transition={{ type: 'spring', stiffness: 120, damping: 14, delay: atraso }}
+      className={`ladrilho-numero absolute leading-none tabular-nums
+                  ${destaque ? 'text-[112px]' : 'text-[74px]'}`}
+    >
+      {menos ? (
+        String(quantos).padStart(2, '0')
+      ) : (
+        <>
+          {quantos < 10 && '0'}
+          <CountUp to={quantos} from={0} duration={1.1} delay={atraso + 0.1} startWhen={mostrar} />
+        </>
+      )}
+    </motion.span>
   )
 }
 
@@ -408,10 +592,12 @@ function Opcoes({ quantos }) {
       initial={menos ? false : 'antes'}
       whileInView="depois"
       viewport={{ once: true, margin: '0px 0px -100px 0px' }}
-      className="mt-0.5 flex items-center gap-1 text-[12.5px] font-semibold text-texto/75"
+      className="opcoes-ladrilho mt-0.5 flex items-center gap-1 text-[12.5px] font-semibold text-texto/75"
     >
       <IconeRamo
         size={RAMO}
+        // traço fino (o padrão do ícone é 2,6): pedido do Marco, nos dois temas
+        strokeWidth={1.7}
         className="ramo-opcoes"
         variantesTraco={{
           // opacity junto: com pathLength 0, a ponta redonda ainda

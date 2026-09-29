@@ -14,6 +14,7 @@ import Pagamento from '@/components/Pagamento'
 import ArteProduto from '@/app/ArteProduto'
 import { CartaoGrade } from '@/app/produto'
 import { TOM } from '@/app/abas'
+import NotaGrifada from '@/app/NotaGrifada'
 import { CabecalhoTela, TituloSecao } from '@/app/pecas'
 import { cascata, subir } from '@/app/animacoes'
 
@@ -203,7 +204,11 @@ function LinhaSacola({ linha }) {
 
         {/* os extras anotados à mão, em vermelho — como o atendente
             escreve na comanda (o mesmo da gaveta do site) */}
-        {extras && <p className="mt-0.5 font-script text-[17px] leading-tight text-acento">+ {extras}</p>}
+        {extras && (
+          <p className="mt-0.5 font-script text-[17px] leading-tight text-acento">
+            <NotaGrifada>+ {extras}</NotaGrifada>
+          </p>
+        )}
 
         <div className="mt-auto w-fit pt-2">
           <SeletorQuantidade

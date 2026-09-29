@@ -60,7 +60,10 @@ const TELAS = { inicio: Inicio, cardapio: Cardapio, combo: Combo, sacola: Sacola
 // a rede de segurança, caso a escrita não avise. A barra leva ~0,4s pra
 // subir e assentar antes de a logo descer.
 const DURACAO = { logo: 4200, barra: 480 }
-const RESPIRO = 320
+// o respiro inclui a caneta de marca-texto passando no slogan (GRIFO_S) —
+// e um instante com ele grifado, antes de a barra subir
+const RESPIRO = 950
+const GRIFO_S = 0.65
 const PROXIMA = { logo: 'barra', barra: null }
 // o giz começa a escrever enquanto o COMBO termina de estourar no meio da
 // logo — as duas coisas se emendam em vez de uma esperar a outra
@@ -131,6 +134,7 @@ export default function AppCelular() {
         visivel={fase !== null}
         aoPular={() => setFase(PROXIMA[fase])}
         aoEscrever={() => setEscrito(true)}
+        escrito={escrito}
       />
     </VooProvider>
   )
@@ -146,7 +150,7 @@ export default function AppCelular() {
    fade), seriam duas logos na tela ao mesmo tempo.
    O fundo fica ABAIXO da barra (z 30 × 40): na fase 'barra', ela sobe por
    cima dele, e a logo pousa nela já na frente de tudo. */
-function Abertura({ visivel, aoPular, aoEscrever }) {
+function Abertura({ visivel, aoPular, aoEscrever, escrito }) {
   return (
     <>
       <AnimatePresence>
@@ -158,7 +162,7 @@ function Abertura({ visivel, aoPular, aoEscrever }) {
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-30 grid place-items-center bg-fundo"
           >
-            <ColunaAbertura slogan aoEscrever={aoEscrever} />
+            <ColunaAbertura slogan aoEscrever={aoEscrever} grifar={escrito} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -172,7 +176,7 @@ function Abertura({ visivel, aoPular, aoEscrever }) {
   )
 }
 
-function ColunaAbertura({ logo = false, slogan = false, aoEscrever }) {
+function ColunaAbertura({ logo = false, slogan = false, aoEscrever, grifar = false }) {
   return (
     <div className="flex flex-col items-center">
       <div className="w-[46vw] max-w-[210px]" style={{ aspectRatio: `100 / ${LOGO.altura}` }}>
@@ -183,9 +187,31 @@ function ColunaAbertura({ logo = false, slogan = false, aoEscrever }) {
         )}
       </div>
       {/* o slogan, escrito a giz. Na camada da logo, só o espaço dele
-          (mesma caixa), pra as duas colunas ficarem alinhadas */}
-      <div className="mt-6 w-[min(52vw,205px)]" style={{ aspectRatio: `${SLOGAN.largura} / ${SLOGAN.altura}` }}>
-        {slogan && <EscritaGiz atraso={ATRASO_ESCRITA} aoTerminar={aoEscrever} />}
+          (mesma caixa), pra as duas colunas ficarem alinhadas.
+          Terminada a escrita, a caneta de marca-texto passa por baixo dele
+          (o mesmo traço das notas grifadas do app — NotaGrifada, .grifo-nota):
+          um traço atrás da metade de baixo das letras, crescendo da
+          esquerda pra direita. */}
+      <div
+        className="relative mt-6 w-[min(52vw,205px)]"
+        style={{ aspectRatio: `${SLOGAN.largura} / ${SLOGAN.altura}` }}
+      >
+        {slogan && (
+          <>
+            <motion.span
+              aria-hidden="true"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: grifar ? 1 : 0 }}
+              transition={{ duration: GRIFO_S, ease: [0.16, 1, 0.3, 1] }}
+              // tortinho, como as notas grifadas do app (a propriedade `rotate`
+              // do CSS: não briga com o scaleX da Motion)
+              className="absolute -inset-x-[4%] bottom-[-6%] h-[58%] origin-left -rotate-[1.3deg] rounded-[3px] bg-(--grifo)"
+            />
+            <span className="relative block size-full">
+              <EscritaGiz atraso={ATRASO_ESCRITA} aoTerminar={aoEscrever} />
+            </span>
+          </>
+        )}
       </div>
     </div>
   )

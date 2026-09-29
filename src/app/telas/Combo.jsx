@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Ban, Check, Plus } from 'lucide-react'
 import { formatarPreco } from '@/data/cardapio'
@@ -11,10 +11,13 @@ import Preco from '@/components/Preco'
 import ArteProduto from '@/app/ArteProduto'
 import { useVoo } from '@/app/voo'
 import { TOM } from '@/app/abas'
+import NotaGrifada from '@/app/NotaGrifada'
 import { CabecalhoTela } from '@/app/pecas'
 import { COMBO_NA_BARRA, cascata, subir } from '@/app/animacoes'
 import { useMenosMovimento } from '@/hooks/useMenosMovimento'
 import Fileira from '@/app/Fileira'
+import ContornoGiz from '@/app/ContornoGiz'
+import Adesivo from '@/app/Adesivo'
 
 /* ============================================================================
    MONTE SEU COMBO — o botão do meio da barra
@@ -226,17 +229,19 @@ export default function Combo({ ativa }) {
 
 /* ---- UMA ETAPA — grupo de escolha única ----
    role="radiogroup"/"radio" + aria-checked: pro leitor de tela, isso é um
-   grupo de rádio, mesmo parecendo cartão. O aro vermelho DESLIZA entre as
-   opções (layoutId próprio de cada etapa, via useId — com o mesmo nome nas
-   três, escolher uma bebida faria o aro voar lá de cima, dos lanches). */
+   grupo de rádio, mesmo parecendo cartão. A escolha é CIRCULADA A GIZ
+   (ContornoGiz): o traço se desenha em volta do cartão novo e o do antigo
+   esmaece — um traço de giz deslizando de um cartão pro outro, como o aro
+   liso de antes fazia, não pareceria feito à mão. O ✓ é um adesivo. */
 function Etapa({ numero, titulo, opcoes, valor, onMudar, nenhum }) {
-  const grupo = useId()
   const lista = nenhum ? [...opcoes, { id: null, nome: nenhum, preco: 0 }] : opcoes
 
   return (
     <fieldset className="mt-7 min-w-0">
       <legend className="flex items-baseline gap-2 px-5">
-        <span className="font-script text-[26px] leading-none text-acento">{numero}.</span>
+        <span className="font-script text-[26px] leading-none text-acento">
+          <NotaGrifada>{numero}.</NotaGrifada>
+        </span>
         <span className="titulo-app text-[22px] text-texto">{titulo}</span>
       </legend>
 
@@ -254,13 +259,9 @@ function Etapa({ numero, titulo, opcoes, valor, onMudar, nenhum }) {
               className="relative flex w-[116px] shrink-0 snap-start flex-col rounded-[20px] bg-cartao p-1.5 text-left
                          shadow-(--sombra-cartao)"
             >
-              {ativo && (
-                <motion.span
-                  layoutId={`anel-${grupo}`}
-                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  className="absolute -inset-[3px] rounded-[23px] border-[2.5px] border-acento"
-                />
-              )}
+              {/* a escolha circulada a giz: se desenha em volta do cartão
+                  escolhido; o da escolha anterior esmaece (ContornoGiz) */}
+              <AnimatePresence>{ativo && <ContornoGiz key="contorno" />}</AnimatePresence>
 
               <span
                 className={`relative flex h-[84px] items-end justify-center overflow-hidden rounded-[14px] pb-2
@@ -280,17 +281,12 @@ function Etapa({ numero, titulo, opcoes, valor, onMudar, nenhum }) {
                 {opcao.id ? formatarPreco(opcao.preco) : 'sem custo'}
               </span>
 
+              {/* o ✓ como adesivo, colado torto no canto (Adesivo.jsx) */}
               <AnimatePresence>
                 {ativo && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    transition={{ type: 'spring', stiffness: 600, damping: 24 }}
-                    className="absolute top-2.5 right-2.5 grid size-6 place-items-center rounded-full bg-botao text-white"
-                  >
-                    <Check size={14} strokeWidth={3.2} />
-                  </motion.span>
+                  <Adesivo key="selo">
+                    <Check size={16} strokeWidth={3.4} />
+                  </Adesivo>
                 )}
               </AnimatePresence>
             </motion.button>

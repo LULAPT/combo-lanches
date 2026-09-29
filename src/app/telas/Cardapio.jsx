@@ -216,9 +216,14 @@ function Chips({ categorias, todos, ativa, aoEscolher }) {
               />
             )}
             {Icone && <Icone size={16} strokeWidth={2.2} className="relative" />}
-            <span className="relative">{nome}</span>
-            <span className={`relative text-[12px] tabular-nums ${escolhida ? 'opacity-70' : 'text-texto-suave'}`}>
-              {quantos}
+            {/* nome e contagem juntos, alinhados pela LINHA DE BASE: a
+                contagem é menor (12px × 13,5px) e, centralizada pela caixa
+                como o resto, parecia boiando fora da linha do nome. O ícone
+                fica de fora do grupo: SVG não tem linha de base, e o texto
+                inteiro desceria (a mesma correção do cardápio do site). */}
+            <span className="relative flex items-baseline gap-1.5">
+              <span>{nome}</span>
+              <span className={`text-[12px] tabular-nums ${escolhida ? 'opacity-70' : 'text-texto-suave'}`}>{quantos}</span>
             </span>
           </button>
         )
