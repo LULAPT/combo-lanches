@@ -20,9 +20,25 @@ import Revelar, { RevelarGrupo } from '@/components/Revelar'
               último, largura total — a ação fica perto do polegar
    ========================================================================== */
 export default function PecaAgora() {
-  const horario = LOJA.fecha
-    ? `Todo dia, ${LOJA.abre} às ${LOJA.fecha}`
-    : `Abre todo dia às ${LOJA.abre}`
+  /* Na lista do desktop, o horário e o bairro levam o grifo (pedido do
+     Marco): "todo dia às 09:30" e "Caetés I" são o que o cliente procura
+     aqui. A lista é o 3º bloco do grupo (surge 180ms depois da chamada),
+     e os dois grifos passam um depois do outro, depois do "fecha pelo
+     iFood" do parágrafo. */
+  const horario = LOJA.fecha ? (
+    <Grifo atraso={180}>
+      Todo dia, {LOJA.abre} às {LOJA.fecha}
+    </Grifo>
+  ) : (
+    <>
+      Abre <Grifo atraso={180}>todo dia às {LOJA.abre}</Grifo>
+    </>
+  )
+  const lugar = (
+    <>
+      <Grifo atraso={480}>{LOJA.bairro}</Grifo> · {LOJA.municipio} — PE
+    </>
+  )
 
   return (
     <SecaoEmpilhada camada={4} id="contato" className="py-20 md:py-28">
@@ -32,7 +48,9 @@ export default function PecaAgora() {
           <Revelar className="text-center lg:text-left">
             <h2 className="text-[clamp(3.6rem,17vw,5.5rem)] leading-[0.86] lg:text-[clamp(6rem,11vw,10.5rem)]">
               <span className="block">Bateu</span>
-              <span className="block text-texto-suave">a</span>
+              {/* o "a" na mesma cor do "Bateu" — em cinza (texto-suave) ele
+                  parecia de outra frase (Marco) */}
+              <span className="block">a</span>
               {/* vermelho chapado — já foi um degradê animado (GradientText
                   do ReactBits), que poluía a seção */}
               <span className="block text-acento">fome?</span>
@@ -58,7 +76,7 @@ export default function PecaAgora() {
             <Revelar variante="right">
               <ul className="grid grid-cols-3 gap-2 lg:grid-cols-1 lg:gap-0 lg:divide-y lg:divide-linha lg:border-y lg:border-linha">
                 <Info icone={<Clock size={18} />} texto={horario} curto={`abre ${LOJA.abre}`} />
-                <Info icone={<MapPin size={18} />} texto={`${LOJA.assinatura} — PE`} curto={LOJA.bairro} />
+                <Info icone={<MapPin size={18} />} texto={lugar} curto={LOJA.bairro} />
                 <Info
                   icone={<IconeInstagram size={18} />}
                   texto="@combo_l4nches"
@@ -68,25 +86,32 @@ export default function PecaAgora() {
               </ul>
             </Revelar>
 
+            {/* O CARDÁPIO EM EVIDÊNCIA (pedido do Marco): o foco do site é o
+                nosso cardápio, e pedir por ele poupa a loja das taxas do
+                iFood. Ele vem primeiro, com o botão cheio; o iFood fica ao
+                lado, só com o contorno. Os estilos não mudaram de lugar,
+                quem trocou foram os dois botões. */}
             <Revelar variante="right" className="flex flex-col gap-2.5 sm:flex-row lg:flex-col xl:flex-row">
+              <Link
+                to="/cardapio"
+                className="botao-primario group flex flex-1 items-center justify-center gap-2 rounded-pill px-6 py-4
+                           font-display font-semibold tracking-wide uppercase
+                           shadow-(--sombra-botao) transition hover:brightness-110 active:scale-95"
+              >
+                {/* a seta anda pra direita no hover — a mesma do "Ver o
+                    cardápio" da hero */}
+                Cardápio <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
+              </Link>
               <a
                 href={LOJA.pedidoExterno}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="botao-primario flex flex-1 items-center justify-center gap-2 rounded-pill px-6 py-4
-                           font-display font-semibold tracking-wide uppercase
-                           shadow-(--sombra-botao) transition hover:brightness-110 active:scale-95"
-              >
-                Pedir no iFood
-              </a>
-              <Link
-                to="/cardapio"
                 className="flex flex-1 items-center justify-center gap-2 rounded-pill border border-linha px-6 py-4
                            font-display font-semibold tracking-wide text-texto uppercase transition
                            hover:border-texto-suave active:scale-95"
               >
-                Cardápio <ArrowRight size={17} />
-              </Link>
+                Pedir no iFood
+              </a>
             </Revelar>
           </div>
         </RevelarGrupo>
