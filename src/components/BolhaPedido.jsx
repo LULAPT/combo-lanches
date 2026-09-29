@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useAnimationControls } from 'motion/react'
-import { Check, Motorbike } from 'lucide-react'
-import { DURACAO_PEDIDO_MS, PASSOS_PEDIDO } from '@/data/pedido'
+import { Motorbike } from 'lucide-react'
+import { DURACAO_PEDIDO_MS, PASSOS_PEDIDO, ULTIMO_PASSO } from '@/data/pedido'
 import { usePedido } from '@/context/PedidoContext'
 import { useMenosMovimento } from '@/hooks/useMenosMovimento'
 
@@ -15,7 +15,9 @@ import { useMenosMovimento } from '@/hooks/useMenosMovimento'
      o anel     em volta da bolinha, enche com o andamento do pedido inteiro
                 (de "recebido" até "entregue")
      o pulso    um anel que se abre e some, sem parar: "está acontecendo"
-     a moto     balança de leve, andando. Entregue, vira um check.
+     a moto     balança de leve, andando. Entregue, ela sai andando pra
+                direita e um ✓ se desenha no lugar — sem salto nem giro
+                (a chegada com tranco + ✓ girando piscava demais)
      o aviso    quando o pedido muda de passo, o nome do passo novo
                 ("Saiu pra entrega") escorrega pra fora da bolinha por uns
                 segundos e volta pra dentro
@@ -45,7 +47,9 @@ export default function BolhaPedido({ className = '' }) {
     anterior.current = passo
     if (!mudou) return
 
-    tranco.start({ scale: [1, 1.22, 0.94, 1], transition: { duration: 0.5, ease: 'easeOut' } })
+    // um "respiro" curto avisando da mudança — na chegada, não: quem conta
+    // o "entregue" é o ✓ se desenhando (mais um salto ali era exagero)
+    if (passo !== ULTIMO_PASSO) tranco.start({ scale: [1, 1.08, 1], transition: { duration: 0.6, ease: 'easeInOut' } })
     setAviso(PASSOS_PEDIDO[passo].titulo)
     const id = setTimeout(() => setAviso(null), AVISO_MS)
     return () => clearTimeout(id)
@@ -113,18 +117,33 @@ export default function BolhaPedido({ className = '' }) {
             >
               <AnimatePresence mode="popLayout" initial={false}>
                 {entregue ? (
-                  <motion.span
+                  // o ✓ se DESENHA, como um visto a caneta — sem giro nem
+                  // quique: a chegada é um momento calmo
+                  <motion.svg
                     key="check"
-                    initial={{ scale: 0, rotate: -90 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+                    viewBox="0 0 24 24"
+                    className="size-[22px]"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    initial={menos ? false : { scale: 0.9 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3, ease: 'easeOut' }}
                   >
-                    <Check size={22} strokeWidth={3} />
-                  </motion.span>
+                    <motion.path
+                      d="M4 12.5 9 17.5 20 6.5"
+                      initial={menos ? false : { pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.45, delay: 0.3, ease: [0.45, 0, 0.2, 1] }}
+                    />
+                  </motion.svg>
                 ) : (
                   <motion.span
                     key="moto"
-                    exit={{ x: 30, opacity: 0 }}
+                    // entregue: a moto vai embora andando pra direita
+                    exit={{ x: 26, opacity: 0, transition: { duration: 0.35, ease: 'easeIn' } }}
                     // a moto "andando": um balanço curtinho, sem parar
                     animate={menos ? {} : { y: [0, -1.5, 0], rotate: [0, -3, 0] }}
                     transition={{ duration: 0.55, repeat: Infinity, ease: 'easeInOut' }}

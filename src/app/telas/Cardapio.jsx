@@ -254,7 +254,13 @@ function Grupo({ grupo }) {
             viewport={{ once: true, margin: '0px 0px -30px 0px' }}
             transition={{ type: 'spring', stiffness: 260, damping: 28, delay: largo ? 0 : (i % 2) * 0.06 }}
           >
-            {largo ? <CartaoLinha item={item} /> : <CartaoGrade item={item} baixo={grupo.id === 'bebidas'} />}
+            {/* surgirMais: os "+" estouram em fila conforme a lista é
+                revelada (só aqui no Cardápio — produto.jsx) */}
+            {largo ? (
+              <CartaoLinha item={item} surgirMais />
+            ) : (
+              <CartaoGrade item={item} baixo={grupo.id === 'bebidas'} surgirMais />
+            )}
           </motion.li>
         ))}
       </ul>

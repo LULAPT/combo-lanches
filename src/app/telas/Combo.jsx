@@ -13,7 +13,7 @@ import { useVoo } from '@/app/voo'
 import { TOM } from '@/app/abas'
 import NotaGrifada from '@/app/NotaGrifada'
 import { CabecalhoTela } from '@/app/pecas'
-import { COMBO_NA_BARRA, cascata, subir } from '@/app/animacoes'
+import { COMBO_NA_BARRA, cascata, sobeDaBarra, subir } from '@/app/animacoes'
 import { useMenosMovimento } from '@/hooks/useMenosMovimento'
 import Fileira from '@/app/Fileira'
 import ContornoGiz from '@/app/ContornoGiz'
@@ -176,21 +176,12 @@ export default function Combo({ ativa }) {
           da barra (z 30, ela é 40): parece sair de dentro dela. */}
       <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--altura-nav)+12px)] z-30 px-3">
         {/* a entrada anima a CAIXA, não o botão: a opacidade da Motion
-            passaria por cima do disabled:opacity-50 dele */}
+            passaria por cima do disabled:opacity-50 dele. A mesma entrada
+            do "Finalizar pedido" da Sacola (sobeDaBarra, animacoes.js) */}
         <motion.div
           initial="fora"
           animate={ativa ? 'dentro' : 'fora'}
-          variants={{
-            fora: { y: 72, scale: 0.9, opacity: 0, transition: { duration: 0 } },
-            dentro: {
-              y: 0,
-              scale: 1,
-              opacity: 1,
-              transition: menos
-                ? { duration: 0 }
-                : { type: 'spring', visualDuration: 0.42, bounce: 0.34, delay: COMBO_NA_BARRA.botao },
-            },
-          }}
+          variants={sobeDaBarra(menos)}
           className="mx-auto max-w-[480px]"
         >
           <motion.button

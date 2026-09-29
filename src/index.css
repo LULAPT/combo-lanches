@@ -399,6 +399,36 @@
   --aro: 0px;
 }
 
+/* O RECORTE DO DISCO no "Finalizar pedido" da Sacola (app)
+   O botão fica preso logo acima da barra de abas, e o disco da logo sobe
+   por cima da borda de baixo dele. Pedido do Marco: em vez de o disco
+   cobrir o botão, o botão ABRE UMA CONCHA pra ele, como a barra faz.
+   Geometria (NavInferior.jsx + Sacola.jsx): barra e botão têm a mesma
+   largura máxima e o mesmo centro; o botão termina 10px acima da barra, e
+   o centro do disco (62px) fica 5px abaixo da borda de cima dela, ou seja,
+   15px abaixo do botão. A concha é um círculo de raio 38 (31 do disco + a
+   folga) com esse centro, com os dois cantos arredondados onde encontra a
+   borda. Mudou o disco ou a distância entre os dois? Refaça o SVG.
+   Camadas de máscara (somam): a peça do meio (110px, com a concha), duas
+   faixas lisas que preenchem os lados (1px de sobra, pra não sobrar
+   fresta) e a TAMPA: tudo, menos um círculo de raio --furo no centro do
+   disco. A concha só aparece onde as quatro são transparentes — então o
+   --furo é quanto dela está aberto: 0px = botão inteiro, 40px = concha
+   inteira (com os cantos arredondados, que são da peça do meio). A
+   Sacola anima o --furo pela Motion: o botão surge inteiro e a concha se
+   abre depois, crescendo a partir do disco (pedido do Marco).
+   Vai no FUNDO do botão, não no botão: máscara no botão cortaria a
+   sombra dele junto. A borda escura da curva é um SVG à parte
+   (BordaConcha, na Sacola), que se desenha por último. */
+.recorte-disco {
+  --concha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 58'%3E%3Cpath d='M0 0H110V58H95.9Q89.9 58 86.8 52.1A38 38 0 0 0 23.2 52.1Q20.1 58 14.1 58H0Z'/%3E%3C/svg%3E");
+  mask:
+    var(--concha) bottom center / 110px 58px no-repeat,
+    linear-gradient(#000 0 0) left / calc(50% - 54px) 100% no-repeat,
+    linear-gradient(#000 0 0) right / calc(50% - 54px) 100% no-repeat,
+    radial-gradient(circle var(--furo, 40px) at 50% calc(100% + 15px), #0000 99%, #000);
+}
+
 /* AS FILEIRAS QUE ROLAM DE LADO (app, Fileira.jsx — Monte seu combo e o
    "Pra começar" do Início)
    A bandeja de cada fileira usa o material do disco da barra (.disco-marca,
@@ -1363,10 +1393,21 @@ h3 {
   animation: rastreio-pulso 1.6s ease-out infinite;
 }
 
-/* a bolinha do pedido (BolhaPedido.jsx): o mesmo pulso, mais lento — ela
-   mora no canto da tela o tempo todo; um pulso rápido ali cansaria */
+/* a bolinha do pedido (BolhaPedido.jsx): um pulso próprio, bem mais
+   discreto — ela mora no canto da tela o tempo todo, e o anel forte do
+   rastreio ali piscava demais (Marco). Anel mais fraco e mais curto, e um
+   DESCANSO longo entre um e outro: abre em ~1,4s e fica quieto ~2s. */
+@keyframes bolha-pedido-pulso {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-acento) 28%, transparent);
+  }
+  42%,
+  100% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
 .bolha-pedido-pulso {
-  animation: rastreio-pulso 2.2s ease-out infinite;
+  animation: bolha-pedido-pulso 3.4s ease-out infinite;
 }
 
 /* BOLINHA DO PEDIDO no app: espaço no canto superior direito.

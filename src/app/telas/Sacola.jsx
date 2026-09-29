@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowRight, Info } from 'lucide-react'
@@ -16,7 +16,8 @@ import { CartaoGrade } from '@/app/produto'
 import { TOM } from '@/app/abas'
 import NotaGrifada from '@/app/NotaGrifada'
 import { CabecalhoTela, TituloSecao } from '@/app/pecas'
-import { cascata, subir } from '@/app/animacoes'
+import { cascata, sobeDaBarra, subir } from '@/app/animacoes'
+import { useMenosMovimento } from '@/hooks/useMenosMovimento'
 
 /* ============================================================================
    SACOLA — o pedido, antes de pagar
@@ -39,8 +40,16 @@ import { cascata, subir } from '@/app/animacoes'
 
 const CONFIRMA_LIMPAR_MS = 3000
 
-export default function Sacola() {
+/* O "Finalizar pedido" chega em três tempos (pedido do Marco), contados de
+   quando a aba vira a ativa: o botão sobe inteiro de trás da barra
+   (sobeDaBarra: espera 0,45s e leva ~0,42s) → a concha pro disco abre →
+   a borda escura da concha se desenha. */
+const CONCHA_ABRE = 0.8 // s: o botão acabou de assentar
+const BORDA_DESENHA = 1.1 // s: a concha está quase aberta
+
+export default function Sacola({ ativa }) {
   const { itens, subtotal, quantidadeTotal, vazio, limpar } = useCarrinho()
+  const menos = useMenosMovimento()
   const [pagando, setPagando] = useState(false)
   const total = TAXA_ENTREGA === null ? subtotal : subtotal + TAXA_ENTREGA
 
@@ -140,19 +149,44 @@ export default function Sacola() {
             </span>
           </motion.p>
 
-          {/* ---- FINALIZAR, preso acima da barra de abas ---- */}
-          <div className="fixed inset-x-0 bottom-[calc(var(--altura-nav)+10px)] z-30 px-3">
+          {/* ---- FINALIZAR, preso acima da barra de abas ----
+              com uma concha recortada embaixo, no meio, pro disco da logo
+              (.recorte-disco no index.css): o fundo vermelho é uma camada
+              à parte, e só ela leva o recorte; a borda escura da concha é
+              outro desenho (BordaConcha).
+              Entra subindo de trás da barra, igual ao "Adicionar combo"
+              (sobeDaBarra, animacoes.js); a concha e a borda vêm depois
+              (CONCHA_ABRE, BORDA_DESENHA) */}
+          <motion.div
+            initial="fora"
+            animate={ativa ? 'dentro' : 'fora'}
+            variants={sobeDaBarra(menos)}
+            className="fixed inset-x-0 bottom-[calc(var(--altura-nav)+10px)] z-30 px-3"
+          >
             <motion.button
               type="button"
               onClick={() => setPagando(true)}
               whileTap={{ scale: 0.97 }}
-              className="mx-auto flex h-[58px] w-full max-w-[480px] items-center justify-between gap-3 rounded-[22px]
-                         bg-botao px-5 text-white shadow-(--sombra-botao)"
+              className="relative mx-auto flex h-[58px] w-full max-w-[480px] items-center justify-between gap-3
+                         rounded-[22px] px-5 text-white shadow-(--sombra-botao)"
             >
-              <span className="font-display text-[16px] font-bold">Finalizar pedido</span>
-              <Preco valor={total} className="font-display text-[18px] font-bold tabular-nums" />
+              {/* botão surge → a concha abre → a borda se desenha */}
+              <motion.span
+                aria-hidden="true"
+                variants={{
+                  fora: { '--furo': '0px', transition: { duration: 0 } },
+                  dentro: {
+                    '--furo': '40px',
+                    transition: menos ? { duration: 0 } : { delay: CONCHA_ABRE, duration: 0.35, ease: [0.3, 0, 0.2, 1] },
+                  },
+                }}
+                className="recorte-disco absolute inset-0 rounded-[22px] bg-botao"
+              />
+              <BordaConcha menos={menos} />
+              <span className="relative font-display text-[16px] font-bold">Finalizar pedido</span>
+              <Preco valor={total} className="relative font-display text-[18px] font-bold tabular-nums" />
             </motion.button>
-          </div>
+          </motion.div>
         </>
       )}
 
@@ -167,6 +201,60 @@ export default function Sacola() {
         }}
       />
     </motion.div>
+  )
+}
+
+/* ---- A BORDA DA CONCHA ----
+   Um vermelho mais escuro, grossa (3px), SÓ na curva que abre espaço pro
+   disco (pedido do Marco). Mesma geometria da máscara .recorte-disco
+   (index.css): uma caixa de 110 × 58 no pé do botão, no meio. O traço
+   tem 6px, mas o clipPath (a forma do botão com a concha) guarda só a
+   metade de DENTRO — nas pontas, onde a curva deita na borda de baixo,
+   ela afina e some.
+   Entra por último, se DESENHANDO do alto da curva pros dois lados. Os
+   dois traços começam no topo pra isso. As variantes ('fora'/'dentro')
+   vêm da caixa do botão (sobeDaBarra). */
+const CONCHA = 'M0 0H110V58H95.9Q89.9 58 86.8 52.1A38 38 0 0 0 23.2 52.1Q20.1 58 14.1 58H0Z'
+const METADES = ['M55 35A38 38 0 0 1 86.8 52.1Q89.9 58 95.9 58', 'M55 35A38 38 0 0 0 23.2 52.1Q20.1 58 14.1 58']
+
+function BordaConcha({ menos }) {
+  const id = useId().replace(/[^a-zA-Z0-9_-]/g, '')
+
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 110 58"
+      className="pointer-events-none absolute bottom-0 left-1/2 h-[58px] w-[110px] -translate-x-1/2"
+    >
+      <clipPath id={`${id}concha`}>
+        <path d={CONCHA} />
+      </clipPath>
+      {METADES.map((d) => (
+        <motion.path
+          key={d}
+          d={d}
+          fill="none"
+          strokeWidth={6}
+          clipPath={`url(#${id}concha)`}
+          // um degrau abaixo do vermelho do botão, sutil (a 68% ficava
+          // escura demais — Marco). Mais marcada: baixe o 84.
+          style={{ stroke: 'color-mix(in oklab, var(--color-botao) 84%, #000)' }}
+          variants={{
+            fora: { pathLength: 0, opacity: 0, transition: { duration: 0 } },
+            dentro: {
+              pathLength: 1,
+              opacity: 1,
+              transition: menos
+                ? { duration: 0 }
+                : {
+                    pathLength: { delay: BORDA_DESENHA, duration: 0.45, ease: [0.3, 0, 0.2, 1] },
+                    opacity: { delay: BORDA_DESENHA, duration: 0.01 },
+                  },
+            },
+          }}
+        />
+      ))}
+    </svg>
   )
 }
 

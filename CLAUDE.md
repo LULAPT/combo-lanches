@@ -121,6 +121,18 @@ ele CHEGA a logo se remonta e o "Adicionar combo" sai de trás da barra —
 metade pra fora, o disco cobria o botão. Pedido do Marco. O ritmo e a
 largura extra são o `COMBO_NA_BARRA` (`app/animacoes.js`), lido pela barra
 e pela tela do Combo.
+O "Finalizar pedido" da Sacola, preso logo acima da barra, tem uma CONCHA
+recortada embaixo pro disco (`.recorte-disco`, máscara em CSS com a
+geometria do disco escrita no comentário) — antes o disco cobria o botão.
+Só a curva da concha tem uma borda de 3px, um degrau mais escura que o
+botão (`BordaConcha`, na Sacola). Os dois botões presos acima da barra
+("Adicionar combo" e "Finalizar pedido") ENTRAM IGUAL: sobem de trás da
+barra com a mesma mola (`sobeDaBarra`, em `app/animacoes.js`). No
+"Finalizar pedido", em três tempos: o botão surge inteiro → a concha abre
+(a variável `--furo` da máscara cresce) → a borda se desenha do alto da
+curva pros lados. Pedidos do Marco.
+Pedido do Marco. Mexeu no tamanho do disco ou na distância botão↔barra?
+Refaça o SVG da concha.
 
 **A sacola tem UM acesso por experiência** (checklist da seção 07: evitar
 duplicidade). Site: a `BolhaCarrinho`, que nasce no canto superior esquerdo
@@ -190,7 +202,11 @@ houver pedido, a `BolhaPedido` (moto, canto superior direito, no site e no
 app) mostra o andamento num anel e reabre a janela `RastreioPedido` no
 toque. No app, o `data-pedido` no `<html>` abre espaço no canto (bloco
 BOLINHA DO PEDIDO no `index.css`). Entregue e o rastreio fechado depois
-disso, o pedido acaba e a bolinha some. **Pro back-end:** os passos e os
+disso, o pedido acaba e a bolinha some. A bolinha é DISCRETA de propósito
+(pedido do Marco, as piscadas estavam exageradas): pulso fraco com descanso
+longo (`.bolha-pedido-pulso`), só um respiro de 8% na troca de passo, e na
+chegada nada de salto: a moto sai andando pra direita e o ✓ se desenha.
+**Pro back-end:** os passos e os
 tempos da simulação (~2,5 min no total) estão em `data/pedido.js`, que é o
 contrato: quando existir servidor, o status real (`recebido` · `preparo` ·
 `caminho` · `entregue`) substitui o `passoSimulado` dentro do contexto, e
@@ -205,6 +221,14 @@ letra continua vermelha. Na abertura, o "lanche de verdade" é grifado
 quando o giz termina. Exceções pedidas pelo Marco: os dois cartões grandes
 do Início ("é o nome da casa", "o mais completo") ficam sem grifo. Nota
 manuscrita nova no app? Embrulhe no `NotaGrifada`.
+
+**Os "+" do Cardápio (app) estouram em fila.** Conforme a lista é
+revelada, cada "+" entra numa fila e estoura 90ms depois do anterior, com
+um quique (`surgir` no `BotaoMais`, `app/produto.jsx`). Só no Cardápio: o
+Início e a Sacola usam os mesmos cartões sem isso. Pedido do Marco.
+⚠️ As telas do app bloqueiam o `initial` da Motion nos filhos (um
+`initial={false}` lá em cima): animação de entrada em peça de tela precisa
+de DOIS estados no `animate` (escondido → visível), senão nasce pronta.
 
 **Identidade da linha do carrinho** = id do item + assinatura dos adicionais,
 ordenada (`gerarLinhaId`). Sem o `sort()`, escolher {bacon, ovo} e {ovo,
